@@ -16,7 +16,7 @@ npm run build
 npm run preview
 ```
 
-Open the preview at `/chsgs-landing-demo/`.
+Open the preview at `/chsgs_landing/`.
 
 ## Deployment
 
