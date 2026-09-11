@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.vite/
+coverage/
+playwright-report/
+test-results/
+qa/
+*.log
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+.env
+.env.*
+*.local
+
+# Historical model candidates; the runtime uses PC03.
+public/models/CHSGS_Plan_WebGL_PC01.glb
+public/models/CHSGS_Plan_WebGL_PC02.glb

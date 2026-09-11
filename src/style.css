@@ -1,0 +1,77 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #262626;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #viewer {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #262626;
+}
+
+canvas { display: block; width: 100%; height: 100%; }
+canvas.chsgs-drag-enabled { cursor: grab; }
+canvas.chsgs-drag-active { cursor: grabbing; }
+
+#status {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  color: #e8e8e8;
+  background: #262626;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+}
+
+#status[hidden] { display: none; }
+#status.error { color: #ffd4d4; }
+
+.qa-panel {
+  position: fixed;
+  z-index: 3;
+  top: 12px;
+  left: 12px;
+  width: min(390px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #5f5f5f;
+  border-radius: 6px;
+  color: #f1f1f1;
+  background: rgb(20 20 20 / 88%);
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.qa-panel pre { margin: 8px 0 0; white-space: pre-wrap; }
+.qa-panel h2 {
+  margin: 12px 0 7px;
+  font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.08em;
+}
+.qa-panel .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.qa-panel button {
+  padding: 5px 8px;
+  border: 1px solid #777;
+  border-radius: 4px;
+  color: inherit;
+  background: #333;
+  cursor: pointer;
+}
+.qa-panel button.active { border-color: #f1f1f1; background: #606060; }
+.qa-panel .tuning { display: grid; gap: 8px; margin-top: 10px; }
+.qa-panel label { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.qa-panel input[type='color'] { width: 44px; height: 26px; padding: 1px; }
+.qa-panel input[type='range'] { grid-column: 1 / -1; width: 100%; }
+.qa-panel .lighting-summary { color: #d2d2d2; }
+.qa-panel .hover-diagnostics,
+.qa-panel .drag-diagnostics { margin-top: 10px; color: #d2d2d2; white-space: pre-line; }
+.qa-panel details { margin-top: 12px; border-top: 1px solid #505050; padding-top: 8px; }
+.qa-panel summary { cursor: pointer; font-weight: 700; }
