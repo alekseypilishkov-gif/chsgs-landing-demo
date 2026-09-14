@@ -50,6 +50,38 @@ export const factory = {
   // Populated from the official client block. Never invent names or brands.
   clientGroups: [] as ClientGroup[],
   catalog: `${official}/catalog/krany/krany-stalnye/`,
+  catalogRoot: `${official}/catalog/`,
+  search: `${official}/search`,
+  profile: `${official}/profile`,
   phone: '+7 351 730-47-47', phoneLink:'tel:+73517304747', email:'office@chsgs.ru', hours:'Пн–Пт 8:30–17:30',
+  address: 'Россия, Челябинская область, Челябинск, Енисейская, 56',
+  addressShort: 'Челябинск, Енисейская, 56',
+  socials: [
+    {id:'vk', label:'ВКонтакте', href:'https://www.vk.com/chsgs/'},
+    {id:'yt', label:'YouTube', href:'https://www.youtube.com/@LDarmature/'},
+    {id:'tg', label:'Telegram', href:'https://t.me/ld_russia/'},
+  ],
+  footerPrimary: [
+    ['Каталог', `${official}/catalog/`],
+    ['Где купить', `${official}/contacts/#wherebuy`],
+    ['Центр документации', `${official}/documentation-center/`],
+    ['Сервис', `${official}/obratitsa_v_servisnuu_sluzbu_ld/`],
+    ['База знаний ЛД', `${official}/knowledge-base/`],
+    ['Материалы для скачивания', `${official}/download/`],
+    ['Услуги кооперации', `${official}/info_cooperation/`],
+  ],
+  footerSecondary: [
+    ['Новости', `${official}/info_novosti/`],
+    ['Участие в ассоциациях', `${official}/info_partners/`],
+    ['Проверить статус обращения', `${official}/proverka_statusa_obrasenia/`],
+    ['Проверить статус дилера', `${official}/supplierstatuscheck/`],
+    ['Написать директору', `${official}/appeal`],
+    ['Контакты', `${official}/contacts/`],
+  ],
+  footerLegal: [
+    ['Политика конфиденциальности', `${official}/politika_konfidencial_nosti/`],
+    ['Политика использования cookie-файлов', `${official}/politika_ispolzovania_fajlov_cookies/`],
+    ['Пользовательское соглашение', `${official}/polzovatelskoe_soglasenie`],
+  ],
 };
 

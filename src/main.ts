@@ -188,6 +188,8 @@ let cameraAzimuthDeg: number = CAMERA_AZIMUTH_DEG;
 let verticalFramingOffset: number = VERTICAL_FRAMING_OFFSET;
 let framedModel: THREE.Object3D | null = null;
 let appearanceController: CHSGSMaterialAppearanceController | null = null;
+let lastPointerClient: THREE.Vector2 | null = null;
+let pointerInsideRenderer = false;
 const hoverController = new CHSGSPassiveHoverController(hoverRoot, camera);
 window.__CHSGS_HOVER__ = hoverController;
 const reducedMotionQuery = matchMedia('(prefers-reduced-motion: reduce)');
@@ -223,8 +225,6 @@ const syncMotionPreference = () => {
 reducedMotionQuery.addEventListener('change', syncMotionPreference);
 hoverCapabilityQuery.addEventListener('change', syncMotionPreference);
 syncMotionPreference();
-let lastPointerClient: THREE.Vector2 | null = null;
-let pointerInsideRenderer = false;
 let refreshHoverDebug: (() => void) | null = null;
 let refreshDragDebug: (() => void) | null = null;
 const qa: QaResult = {

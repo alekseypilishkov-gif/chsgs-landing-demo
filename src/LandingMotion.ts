@@ -15,6 +15,7 @@ export class LandingMotion {
   private readonly hero=el('.hero-stage');
   private readonly heading=el('.hero-heading');
   private readonly copy=el('.hero-copy');
+  private readonly heroNav=document.querySelector<HTMLElement>('.hero-nav');
   private readonly bottom=el('.hero-bottom');
   private readonly metrics=el('.metrics');
   private readonly viewer=el('#viewer');
@@ -142,6 +143,14 @@ export class LandingMotion {
     const reduce=this.reduced.matches;this.diagnostics.reducedMotion=reduce;
     this.heading.style.transform=`translateY(${-progress*(mobile?24:tablet?30:h*.04)}px) scale(${mix(1,mobile?.64:tablet?.6:.53,progress)})`;
     this.copy.style.opacity=String(1-smooth(progress*2));this.copy.style.transform=`translateY(${-progress*(reduce?0:24)}px)`;this.copy.style.visibility=progress>.65?'hidden':'visible';
+    if(this.heroNav){
+      const navShow=reduce?y>h*.2?1:0:smooth((y-h*.08)/(h*.35));
+      this.heroNav.style.opacity=String(navShow);
+      this.heroNav.style.transform=`translate(-50%, ${(1-navShow)*(reduce?0:12)}px)`;
+      this.heroNav.style.visibility=navShow<.04?'hidden':'visible';
+      this.heroNav.inert=navShow<.2;
+      this.heroNav.style.pointerEvents=navShow<.2?'none':'auto';
+    }
     this.bottom.style.opacity=String(1-progress);
     this.bottom.inert=progress>.9;
     const mp=smooth((progress-.23)/.62);this.metrics.style.opacity=String(mp);this.metrics.style.transform=`translateY(${(1-mp)*(reduce?0:h*.15)}px)`;this.metrics.classList.toggle('is-visible',mp>.01);this.metrics.inert=mp<.1;

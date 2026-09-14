@@ -1,21 +1,42 @@
 import { factory, official, type Chapter, type Metric } from './factoryContent';
+import './siteChrome.css';
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 type RevealKind = 'label'|'heading'|'body'|'ui'|'card'|'media';
 const reveal = (kind: RevealKind, delay=0) => `class="reveal" data-reveal="${kind}"${delay ? ` style="--reveal-delay:${delay.toFixed(2)}s"` : ''}`;
 const image = (c: Chapter, kind?: RevealKind, delay=0) => c.image ? `<figure${kind ? ` ${reveal(kind,delay)}` : ''}><img src="${import.meta.env.BASE_URL}media/${c.image}" alt="${esc(c.alt)}" width="1200" height="760" loading="lazy" decoding="async"></figure>` : '';
 const nav = [['about','О заводе'],['production','Производство'],['quality','Качество'],['service','Сервис'],['achievements','Достижения'],['clients','Клиенты']];
+const navItems = (className = '') => nav.map(([id,label])=>`<a${className ? ` class="${className}"` : ''} href="#${id}">${esc(label)}</a>`).join('');
 const number = (m: Metric, n=m.value) => `${m.prefix ?? ''}${Math.round(n).toLocaleString('ru-RU')}${m.suffix ?? ''}`;
+const icon = {
+  search: '<svg class="ld-site-header__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.524 12.689L15.834 14.998C15.942 15.109 16.001 15.259 16 15.414C15.999 15.569 15.936 15.717 15.827 15.827C15.717 15.936 15.569 15.999 15.414 16C15.259 16.001 15.109 15.942 14.998 15.834L12.688 13.524C11.179 14.817 9.228 15.476 7.243 15.361C5.259 15.246 3.397 14.368 2.046 12.909C0.696 11.451 -0.037 9.526 0.001 7.539C0.04 5.552 0.846 3.657 2.251 2.251C3.657 0.846 5.552 0.04 7.539 0.001C9.526 -0.037 11.451 0.696 12.909 2.046C14.368 3.397 15.246 5.259 15.361 7.243C15.476 9.228 14.817 11.179 13.524 12.688ZM7.687 14.191C9.412 14.191 11.066 13.506 12.286 12.286C13.506 11.066 14.191 9.412 14.191 7.687C14.191 5.962 13.506 4.308 12.286 3.088C11.066 1.868 9.412 1.183 7.687 1.183C5.962 1.183 4.308 1.868 3.088 3.088C1.868 4.308 1.183 5.962 1.183 7.687C1.183 9.412 1.868 11.066 3.088 12.286C4.308 13.506 5.962 14.191 7.687 14.191Z" transform="translate(4 4)" fill="currentColor"/></svg>',
+  angle: '<svg class="ld-site-header__angle" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M0.72 0L0 0.719L5.141 5.859L0.001 11L0.72 11.719L6.22 6.219L6.563 5.859L6.22 5.5L0.72 0Z" transform="translate(5.765 2.141)" fill="currentColor"/></svg>',
+  burger: '<svg class="ld-site-header__icon ld-site-header__icon--burger" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M0 0.5C0 0.367 0.053 0.24 0.146 0.146C0.24 0.053 0.367 0 0.5 0L17.5 0C17.633 0 17.76 0.053 17.854 0.146C17.947 0.24 18 0.367 18 0.5C18 0.633 17.947 0.76 17.854 0.854C17.76 0.947 17.633 1 17.5 1L0.5 1C0.367 1 0.24 0.947 0.146 0.854C0.053 0.76 0 0.633 0 0.5ZM0 7C0 6.867 0.053 6.74 0.146 6.646C0.24 6.553 0.367 6.5 0.5 6.5L17.5 6.5C17.633 6.5 17.76 6.553 17.854 6.646C17.947 6.74 18 6.867 18 7C18 7.133 17.947 7.26 17.854 7.354C17.76 7.447 17.633 7.5 17.5 7.5L0.5 7.5C0.367 7.5 0.24 7.447 0.146 7.354C0.053 7.26 0 7.133 0 7ZM0 13.5C0 13.367 0.053 13.24 0.146 13.146C0.24 13.053 0.367 13 0.5 13L17.5 13C17.633 13 17.76 13.053 17.854 13.146C17.947 13.24 18 13.367 18 13.5C18 13.633 17.947 13.76 17.854 13.854C17.76 13.947 17.633 14 17.5 14L0.5 14C0.367 14 0.24 13.947 0.146 13.854C0.053 13.76 0 13.633 0 13.5Z" transform="translate(3 5)" fill="currentColor" fill-rule="evenodd"/></svg>',
+  close: '<svg class="ld-site-header__icon ld-site-header__icon--close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.75 6.31L17.69 5.25L12 10.94L6.31 5.25L5.25 6.31L10.94 12L5.25 17.69L6.31 18.75L12 13.06L17.69 18.75L18.75 17.69L13.06 12L18.75 6.31Z" fill="currentColor"/></svg>',
+  user: '<svg class="ld-site-header__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v1.5h16V18c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>',
+  vk: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.78 17.5h1.18s.36-.04.54-.24c.17-.18.16-.53.16-.53s-.02-1.62.73-1.86c.74-.23 1.69 1.56 2.7 2.25.76.52 1.34.41 1.34.41l2.69-.04s1.4-.09.74-1.19c-.06-.09-.4-.84-2.06-2.38-1.74-1.61-1.51-1.35.59-4.14.128-.1.7-2.64 1.96-3.74.38-.27.26-.45.26-.45l-2.86.04s-.42-.06-.74.16c-.31.21-.5.71-.5.71s-.91 2.42-2.12 4c-1.28 1.66-1.79 1.75-2 1.64-.49-.24-.37-1-.37-1.53V8.3c.01-.5-.16-.81-.5-.98-.27-.13-.71-.18-1.32-.17-1.01.01-1.66.06-2.09.37-.28.21-.5.67-.1.7.5.04.82.2 1 .38.23.24.22.79.22.79s.13 2.07-.31 2.32c-.3.18-.71-.18-1.6-1.81-.45-.83-.79-1.76-.79-1.76s-.07-.16-.19-.25c-.15-.11-.36-.15-.36-.15l-2.72.04s-.41.01-.56.19c-.13.16-.01.49-.01.49s2.15 5.03 4.58 7.56c2.23 2.32 4.77 2.17 4.77 2.17"/></svg>',
+  yt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8zM9.6 15.6V8.4L15.8 12z"/></svg>',
+  tg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.9 4.4 18.6 20c-.2 1.1-.9 1.3-1.8.8l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.2-8.3c.4-.4-.1-.6-.6-.2l-11.4 7.2-4.9-1.5c-1.1-.4-1.1-1.1.2-1.6L20.3 3c.9-.3 1.7.2 1.6 1.4z"/></svg>',
+} as const;
+const socialIcon = (id: string) => id === 'vk' ? icon.vk : id === 'yt' ? icon.yt : icon.tg;
+const footerLinks = (links: readonly string[][], extra = '', legal = false) =>
+  `<ul class="ld-site-footer__list${legal ? ' ld-site-footer__legal-links' : ''}${extra}">${links.map(([label, href]) => `<li><a class="ld-site-footer__link${legal ? ' ld-site-footer__link--accent' : ''}" ${label?.startsWith('Пользовательское') ? 'id="user-agreement" ' : ''}href="${href}">${esc(label ?? '')}</a></li>`).join('')}</ul>`;
 
 export function mountLanding(): void {
   document.querySelector('#app')!.innerHTML = `
     <a class="skip-link" href="#production">Перейти к содержанию</a>
-    <header class="site-header">
-      <a class="brand" href="${official}/" aria-label="ЛД — сайт производителя"><img src="${import.meta.env.BASE_URL}media/ld-logo.svg" width="79" height="48" alt="ЛД"></a>
-      <span class="header-factory">ЗАВОД ЧСГС</span>
-      <nav id="main-nav" aria-label="Разделы страницы">${nav.map(([id,label])=>`<a href="#${id}">${label}</a>`).join('')}</nav>
-      <button id="theme-toggle" class="icon-button" type="button" aria-label="Светлая тема" aria-pressed="false"><span aria-hidden="true">◐</span></button>
-      <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="main-nav"><span></span><span></span></button>
+    <header class="site-header ld-site-header ld-site-header--without-cart" data-surface="content">
+      <div class="ld-site-header__glass-bar" aria-hidden="true"></div>
+      <div class="ld-site-header__bar">
+        <a class="ld-site-header__catalog ld-site-header__button" href="${factory.catalogRoot}"><span class="ld-site-header__catalog-label">Каталог</span>${icon.angle}</a>
+        <a class="ld-site-header__search ld-site-header__icon-button" href="${factory.search}" aria-label="Поиск">${icon.search}</a>
+        <a class="ld-site-header__logo" href="${official}/" aria-label="LD"><img src="${import.meta.env.BASE_URL}media/ld-logo.svg" width="79" height="48" alt=""></a>
+        <button id="menu-toggle" class="ld-site-header__burger ld-site-header__icon-button" type="button" aria-label="Меню" aria-expanded="false" aria-controls="main-nav" aria-haspopup="true">${icon.burger}${icon.close}</button>
+        <a class="ld-site-header__user ld-site-header__icon-button" href="${factory.profile}" aria-label="Личный кабинет">${icon.user}</a>
+      </div>
+      <nav id="main-nav" class="ld-site-header__panel" hidden aria-label="Разделы страницы">${navItems()}</nav>
     </header>
+    <button id="theme-toggle" class="theme-dock" type="button" aria-label="Светлая тема" aria-pressed="false"><span aria-hidden="true">◐</span></button>
+    <nav class="hero-nav" aria-label="Навигация">${navItems()}</nav>
     <div id="viewer" role="img" aria-label="Интерактивная трёхмерная модель завода ЧСГС. Поворот — горизонтальным перетаскиванием."></div>
     <div id="status" role="status" aria-live="polite"><div class="loader-content"><img src="${import.meta.env.BASE_URL}media/ld-logo.svg" width="79" height="48" alt="ЛД"><p>ЧЕЛЯБИНСКСПЕЦГРАЖДАНСТРОЙ</p><div class="load-track"><span id="load-bar"></span></div><span id="load-label">Загружаем завод</span></div></div>
     <main>
@@ -44,7 +65,41 @@ export function mountLanding(): void {
       <section id="clients" class="section solid clients-section" aria-labelledby="clients-title"><div class="section-heading"><p class="eyebrow" ${reveal('label')}>07 / НАМ ДОВЕРЯЮТ</p><h2 id="clients-title" ${reveal('heading',.12)}>Продукция завода используется крупными клиентами</h2></div><div id="clients-content"></div></section>
       <section id="catalog" class="section catalog-section" aria-labelledby="catalog-title"><p class="eyebrow" ${reveal('label')}>08 / ПРОДУКЦИЯ ЧСГС</p><h2 id="catalog-title" ${reveal('heading',.12)}>От производства —<br>к вашему проекту.</h2><a class="catalog-cta" ${reveal('ui',.24)} href="${factory.catalog}"><span>Изучить каталог<br>стальных шаровых кранов</span><span aria-hidden="true">↗</span></a></section>
     </main>
-    <footer id="contacts" class="section site-footer"><div class="footer-top"><a class="brand" ${reveal('ui')} href="${official}/" aria-label="ЛД — сайт производителя"><img src="${import.meta.env.BASE_URL}media/ld-logo.svg" width="79" height="48" alt="ЛД"></a><p ${reveal('body',.12)}>ЧелябинскСпецГражданСтрой<br>Завод полного цикла</p><div class="footer-contact" ${reveal('body',.24)}><a href="${factory.phoneLink}">${factory.phone}</a><span>${factory.hours}</span><a href="mailto:${factory.email}">${factory.email}</a></div><a class="back-top" ${reveal('ui',.36)} href="#about">Наверх ↑</a></div><div class="footer-links" ${reveal('ui',.12)}><a href="${official}/politika_konfidencial_nosti/">Политика конфиденциальности</a><a href="${official}/politika_ispolzovania_fajlov_cookies/">Политика использования cookie-файлов</a><a id="user-agreement" href="${official}/polzovatelskoe_soglasenie">Пользовательское соглашение</a></div><p class="footer-legal" ${reveal('body',.24)}>© 2026 ООО ТД «ЛД». Все права защищены законом об авторском праве, копирование информации без разрешения правообладателя запрещено.</p><p class="footer-legal" ${reveal('body',.36)}>Предложения на сайте не являются публичной офертой. Информация на сайте о товаре носит рекламный характер и расценивается как приглашение делать оферты на основании п. 1 ст. 437 Гражданского кодекса РФ.</p></footer>`;
+    <footer id="contacts" class="site-footer ld-site-footer">
+      <div class="ld-site-footer__inner">
+        <div class="ld-site-footer__main">
+          <section class="ld-site-footer__contacts" aria-label="Контакты">
+            <a class="ld-site-footer__logo-link" ${reveal('ui')} href="${official}/" aria-label="ЛД — сайт производителя"><img class="ld-site-footer__logo" src="${import.meta.env.BASE_URL}media/ld-logo.svg" width="79" height="48" alt="ЛД"></a>
+            <address class="ld-site-footer__address" ${reveal('body',.12)}>
+              <a class="ld-site-footer__contact-line ld-site-footer__contact-line--phone" href="${factory.phoneLink}">${factory.phone}</a>
+              <span class="ld-site-footer__contact-line ld-site-footer__contact-line--schedule">${factory.hours}</span>
+              <span class="ld-site-footer__contact-line ld-site-footer__contact-line--address ld-site-footer__contact-line--address-desktop">${factory.address}</span>
+              <span class="ld-site-footer__contact-line ld-site-footer__contact-line--address ld-site-footer__contact-line--address-compact">${factory.addressShort}</span>
+              <a class="ld-site-footer__contact-line ld-site-footer__contact-line--email ld-site-footer__link ld-site-footer__link--accent" href="mailto:${factory.email}">${factory.email}</a>
+            </address>
+            <div class="ld-site-footer__socials" ${reveal('ui',.24)} aria-label="Социальные сети">
+              <span class="ld-site-footer__social-title">Мы в соцсетях</span>
+              <div class="ld-site-footer__social-list">${factory.socials.map(s=>`<a class="ld-site-footer__social-icon" href="${s.href}" aria-label="${esc(s.label)}" rel="noopener noreferrer">${socialIcon(s.id)}</a>`).join('')}</div>
+            </div>
+          </section>
+          <div class="ld-site-footer__navigation">
+            <nav class="ld-site-footer__nav ld-site-footer__nav--desktop" aria-label="Основная навигация">${footerLinks(factory.footerPrimary)}</nav>
+            <nav class="ld-site-footer__nav ld-site-footer__nav--desktop" aria-label="Дополнительная навигация">${footerLinks(factory.footerSecondary)}</nav>
+            <nav class="ld-site-footer__compact-nav" aria-label="Навигация футера">${footerLinks(factory.footerPrimary,' ld-site-footer__list--compact')}${footerLinks(factory.footerSecondary,' ld-site-footer__list--compact')}</nav>
+          </div>
+        </div>
+        <div class="ld-site-footer__divider" aria-hidden="true"></div>
+        <div class="ld-site-footer__legal">
+          <div class="ld-site-footer__legal-column" ${reveal('body',.12)}>
+            <p class="ld-site-footer__legal-text">© 2026 ООО ТД «ЛД». Все права защищены законом об авторском праве, копирование информации без разрешения правообладателя запрещено.</p>
+            <div class="ld-site-footer__feedback-wrap"><a class="ld-site-footer__link ld-site-footer__link--accent" href="${official}/siteld/" target="_blank" rel="noopener noreferrer">Сообщить о проблеме в работе сайта</a></div>
+          </div>
+          ${footerLinks(factory.footerLegal, ' ld-site-footer__legal-links--desktop', true)}
+          ${footerLinks(factory.footerLegal, ' ld-site-footer__legal-links--compact', true)}
+          <p class="ld-site-footer__legal-text" ${reveal('body',.24)}>Предложения на сайте не являются публичной офертой. Информация на сайте о товаре носит рекламный характер и расценивается как приглашение делать оферты на основании п. 1 ст. 437 Гражданского кодекса РФ.</p>
+        </div>
+      </div>
+    </footer>`;
   initTheme(); initMenu(); initClients(); initVideo();
 }
 
@@ -54,9 +109,12 @@ function initTheme(): void {
   button.addEventListener('click',()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light';try{localStorage.setItem('chsgs-theme',document.documentElement.dataset.theme);}catch{/* Storage may be disabled. */}update();});update();
 }
 function initMenu(): void {
-  const button=document.querySelector<HTMLButtonElement>('#menu-toggle')!;const nav=document.querySelector<HTMLElement>('#main-nav')!;
-  const close=()=>{button.setAttribute('aria-expanded','false');button.setAttribute('aria-label','Открыть меню');nav.classList.remove('is-open');};
-  button.addEventListener('click',()=>{const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');nav.classList.toggle('is-open',open);});
+  const header=document.querySelector<HTMLElement>('.ld-site-header')!;
+  const button=document.querySelector<HTMLButtonElement>('#menu-toggle')!;
+  const nav=document.querySelector<HTMLElement>('#main-nav')!;
+  const setOpen=(open:boolean)=>{button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Закрыть меню':'Меню');button.classList.toggle('ld-site-header__burger--open',open);header.classList.toggle('ld-site-header--panel-open',open);nav.classList.toggle('is-open',open);nav.hidden=!open;document.body.classList.toggle('is-menu-open',open);};
+  const close=()=>setOpen(false);
+  button.addEventListener('click',()=>setOpen(button.getAttribute('aria-expanded')!=='true'));
   nav.addEventListener('click',e=>{if((e.target as HTMLElement).closest('a'))close();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&nav.classList.contains('is-open')){close();button.focus();}});
   document.addEventListener('click',e=>{if(!(e.target as HTMLElement).closest('.site-header'))close();});
