@@ -10,7 +10,7 @@ import {
 } from './CHSGSMaterialAppearanceController';
 import { CHSGSPassiveHoverController, type PassiveHoverDiagnostics } from './CHSGSPassiveHoverController';
 import { CHSGSDragInertiaController, type DragInertiaDiagnostics } from './CHSGSDragInertiaController';
-import { mountLanding } from './landing';
+import { getDebugModelSettings, mountLanding, type DebugModelSettings } from './landing';
 import { LandingMotion } from './LandingMotion';
 import { SmoothPageScroll } from './SmoothPageScroll';
 import './landing.css';
@@ -35,6 +35,10 @@ const LIGHTING = {
   directionalColor: 0xffffff,
   directionalIntensity: 2.8,
   directionalPosition: new THREE.Vector3(32, 48, 28),
+  accentColor: 0xffec00,
+  accentIntensity: 140,
+  accentLerp: 0.22,
+  accentIntensityLerp: 0.16,
 } as const;
 const CAMERA = {
   fov: 45,
@@ -165,6 +169,9 @@ keyLight.shadow.bias = SHADOWS.bias;
 keyLight.shadow.normalBias = SHADOWS.normalBias;
 keyLight.shadow.radius = SHADOWS.radius;
 scene.add(keyLight, keyLight.target);
+const accentLight = new THREE.PointLight(LIGHTING.accentColor, 0, 40, 2);
+accentLight.name = 'CHSGS_CursorLight';
+scene.add(accentLight);
 
 const entryRoot = new THREE.Group();
 entryRoot.name = 'CHSGS_EntryRoot';
@@ -218,6 +225,30 @@ let neutralModelBounds: THREE.Box3 | null = null;
 document.addEventListener('chsgs-theme', () => {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'light' ? '#f2f1ec' : '#262626');
 });
+let debugModel: DebugModelSettings = getDebugModelSettings();
+const applyKeyIntensity = (intensity: number) => {
+  const scale = LIGHTING.directionalIntensity > 0 ? intensity / LIGHTING.directionalIntensity : 1;
+  keyLight.intensity = intensity;
+  hemisphereLight.intensity = LIGHTING.hemisphereIntensity * scale;
+};
+const applyAccentEnabled = (enabled: boolean) => {
+  if (!enabled) accentLight.intensity = 0;
+};
+const applyDebugModel = () => {
+  applyKeyIntensity(debugModel.keyIntensity);
+  applyAccentEnabled(debugModel.accent);
+  if (!appearanceController) return;
+  appearanceController.setMode(debugModel.original ? 'ORIGINAL' : 'CLAY');
+  appearanceController.setAoEnabled(debugModel.ao);
+  appearanceController.setNormalMapsEnabled(debugModel.normals);
+  appearanceController.setRevealEnabled(debugModel.reveal);
+};
+document.addEventListener('chsgs-debug-model', (event: Event) => {
+  const detail = (event as CustomEvent<Partial<DebugModelSettings>>).detail ?? {};
+  debugModel = { ...debugModel, ...detail };
+  applyDebugModel();
+});
+applyDebugModel();
 const syncMotionPreference = () => {
   hoverController.setReducedMotion(reducedMotionQuery.matches || !hoverCapabilityQuery.matches);
   dragController.setReducedMotion(reducedMotionQuery.matches);
@@ -466,6 +497,51 @@ function frameModel(root: THREE.Object3D): void {
     controls.update();
   }
   landingMotion.setFrame(bounds);
+}
+
+const accentRaycaster = new THREE.Raycaster();
+const accentNdc = new THREE.Vector2();
+const accentHit = new THREE.Vector3();
+const accentTargetPos = new THREE.Vector3();
+const accentCenterLocal = new THREE.Vector3();
+const accentWorldCenter = new THREE.Vector3();
+const accentScale = new THREE.Vector3();
+const accentUp = new THREE.Vector3(0, 1, 0);
+const accentPlane = new THREE.Plane();
+let accentTarget: THREE.Object3D | null = null;
+let accentHeight = 8;
+
+function configureAccentLight(root: THREE.Object3D): void {
+  accentTarget = root;
+  const bounds = new THREE.Box3().setFromObject(root);
+  const size = bounds.getSize(accentHit);
+  bounds.getCenter(accentCenterLocal);
+  const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+  accentHeight = Math.max(3, size.y * 0.45 + 1.5);
+  accentLight.distance = Math.max(24, maxDim * 0.42);
+  accentTargetPos.set(accentCenterLocal.x, accentCenterLocal.y + accentHeight, accentCenterLocal.z);
+  accentLight.position.copy(accentTargetPos);
+}
+
+function updateAccentLight(): void {
+  const active = debugModel.accent && pointerInsideRenderer && lastPointerClient !== null && accentTarget !== null;
+  const targetIntensity = active ? debugModel.accentIntensity : 0;
+  accentLight.intensity += (targetIntensity - accentLight.intensity) * LIGHTING.accentIntensityLerp;
+  if (Math.abs(accentLight.intensity - targetIntensity) < 0.05) accentLight.intensity = targetIntensity;
+  if (!active || !accentTarget || !lastPointerClient) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  const width = Math.max(rect.width, Number.EPSILON);
+  const height = Math.max(rect.height, Number.EPSILON);
+  accentNdc.set(((lastPointerClient.x - rect.left) / width) * 2 - 1, -((lastPointerClient.y - rect.top) / height) * 2 + 1);
+  accentRaycaster.setFromCamera(accentNdc, camera);
+  accentWorldCenter.copy(accentCenterLocal);
+  accentTarget.localToWorld(accentWorldCenter);
+  accentTarget.getWorldScale(accentScale);
+  const planeY = accentWorldCenter.y + accentHeight * accentScale.y;
+  accentPlane.setFromNormalAndCoplanarPoint(accentUp, accentHit.set(accentWorldCenter.x, planeY, accentWorldCenter.z));
+  if (!accentRaycaster.ray.intersectPlane(accentPlane, accentHit)) return;
+  accentTargetPos.set(accentHit.x, planeY, accentHit.z);
+  accentLight.position.lerp(accentTargetPos, LIGHTING.accentLerp);
 }
 
 function configureModelShadows(root: THREE.Object3D): void {
@@ -1057,6 +1133,7 @@ async function start(): Promise<void> {
     appearanceController = appearance;
     appearance.setFramebufferScale(renderer.getPixelRatio());
     window.__CHSGS_APPEARANCE__ = appearance;
+    applyDebugModel();
     validateMaterials(gltf.scene, materialMap);
     if (qa.meshes !== EXPECTED.meshes) qa.errors.push(`Mesh count ${qa.meshes}, expected ${EXPECTED.meshes}.`);
     if (qa.triangles !== EXPECTED.triangles) qa.errors.push(`Triangle count ${qa.triangles}, expected ${EXPECTED.triangles}.`);
@@ -1067,6 +1144,8 @@ async function start(): Promise<void> {
     configureModelShadows(entryRoot);
     neutralModelBounds = new THREE.Box3().setFromObject(entryRoot);
     frameModel(entryRoot);
+    configureAccentLight(gltf.scene);
+    applyDebugModel();
     // Lighting shares the scroll/entry layout transform, retaining the approved
     // model-relative lighting while drag/hover still rotate beneath that rig.
     scrollRoot.add(keyLight, keyLight.target);
@@ -1110,6 +1189,7 @@ renderer.setAnimationLoop(() => {
   appearanceController?.update(deltaSeconds);
   dragController.update(deltaSeconds);
   hoverController.update(deltaSeconds);
+  updateAccentLight();
   qa.hover = hoverController.diagnostics;
   qa.drag = dragController.diagnostics;
   qa.hierarchy.neutralHoverRotation = Math.abs(qa.hover.currentPassiveYawDeg) < 1e-6
