@@ -3,9 +3,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as MikkTSpace from 'three/addons/libs/mikktspace.module.js';
 import { CHSGSMaterialAppearanceController } from './CHSGSMaterialAppearanceController';
+import { CHSGSModelThemeController, createModelLocalGateLights, type CHSGSModelTheme } from './CHSGSModelThemeController';
 import { CHSGSPassiveHoverController } from './CHSGSPassiveHoverController';
 import { CHSGSDragInertiaController } from './CHSGSDragInertiaController';
-import { getDebugModelSettings, type DebugModelSettings } from './debugDock';
+import { getDebugModelSettings, getDebugThemeSettings, type DebugModelSettings, type DebugThemeSettings } from './debugDock';
 import { mountLanding } from './landing/index';
 import { LandingMotion } from './LandingMotion';
 import { SmoothPageScroll } from './SmoothPageScroll';
@@ -17,10 +18,8 @@ import { CursorLight } from './viewer/cursorLight';
 import { cameraRollDeg, ModelFramer } from './viewer/framing';
 import { validateAndGenerateTangents, validateMaterials } from './viewer/materials';
 import { configureModelShadows } from './viewer/shadows';
-import { runAppearanceSwitchingQa } from './viewer/appearanceQa';
 import { applyDebugModel } from './viewer/debugModel';
 import { bindViewerPointer, updateHoverPointerFromClient, type PointerState } from './viewer/pointer';
-import { createQaPanel, type QaPanelHandles } from './viewer/qaPanel';
 import './landing.css';
 
 mountLanding();
@@ -36,6 +35,7 @@ const {
 } = createViewer(host);
 
 let appearanceController: CHSGSMaterialAppearanceController | null = null;
+let modelThemeController: CHSGSModelThemeController | null = null;
 const pointer: PointerState = { client: null, inside: false };
 const orbit = { controls: null as InstanceType<typeof OrbitControls> | null };
 const hoverController = new CHSGSPassiveHoverController(hoverRoot, camera);
@@ -58,7 +58,7 @@ window.__CHSGS_DRAG__ = dragController;
 const landingMotion = new LandingMotion(entryRoot, scrollRoot, heroIdleRoot, camera, (active) => {
   dragController.setEnabled(active);
   hoverController.setEnabled(active);
-  if (!active) { hoverController.setPointerInside(false); appearanceController?.setPointerInside(false); }
+  if (!active) hoverController.setPointerInside(false);
 });
 const qa = createInitialQa({
   camera,
@@ -74,7 +74,9 @@ dragController.setEnabled(false);
 const cursorLight = new CursorLight(accentLight, camera);
 // Transparent WebGL composes against the current theme without changing approved materials.
 document.addEventListener('chsgs-theme', () => {
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'light' ? '#f2f1ec' : '#262626');
+  const theme: CHSGSModelTheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f2f1ec' : '#262626');
+  modelThemeController?.setTheme(theme);
 });
 let debugModel: DebugModelSettings = getDebugModelSettings();
 const applyCurrentDebugModel = () => applyDebugModel(debugModel, keyLight, hemisphereLight, accentLight, appearanceController);
@@ -82,6 +84,11 @@ document.addEventListener('chsgs-debug-model', (event: Event) => {
   const detail = (event as CustomEvent<Partial<DebugModelSettings>>).detail ?? {};
   debugModel = { ...debugModel, ...detail };
   applyCurrentDebugModel();
+});
+document.addEventListener('chsgs-debug-theme', (event: Event) => {
+  const detail = (event as CustomEvent<Partial<DebugThemeSettings>>).detail ?? {};
+  if (detail.windowEmissiveColor) modelThemeController?.setWindowEmissiveColor(detail.windowEmissiveColor);
+  if (typeof detail.windowEmissiveIntensity === 'number') modelThemeController?.setWindowEmissiveIntensity(detail.windowEmissiveIntensity);
 });
 applyCurrentDebugModel();
 const syncMotionPreference = () => {
@@ -91,7 +98,6 @@ const syncMotionPreference = () => {
 reducedMotionQuery.addEventListener('change', syncMotionPreference);
 hoverCapabilityQuery.addEventListener('change', syncMotionPreference);
 syncMotionPreference();
-let qaPanel: QaPanelHandles | null = null;
 
 function resize(): void {
   const width = Math.max(1, host.clientWidth);
@@ -103,15 +109,6 @@ function resize(): void {
   camera.updateProjectionMatrix();
   if (framing.framedModel) framing.frame(framing.framedModel);
   qa.pixelRatio = renderer.getPixelRatio();
-  appearanceController?.setFramebufferScale(qa.pixelRatio);
-  if (pointer.inside && pointer.client && appearanceController) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    appearanceController.setPointerFromCanvasCss(
-      pointer.client.x - rect.left,
-      pointer.client.y - rect.top,
-      rect.height,
-    );
-  }
 }
 window.addEventListener('resize', resize);
 resize();
@@ -120,7 +117,7 @@ bindViewerPointer({
   hover: hoverController,
   drag: dragController,
   pointer,
-  getAppearance: () => appearanceController,
+  getAppearance: () => null,
 });
 
 async function start(): Promise<void> {
@@ -135,17 +132,28 @@ async function start(): Promise<void> {
     });
     hoverRoot.add(gltf.scene);
     const { materialMap, materialInstances } = validateAndGenerateTangents(gltf.scene, qa);
-    const appearance = new CHSGSMaterialAppearanceController(materialInstances);
-    appearanceController = appearance;
-    appearance.setFramebufferScale(renderer.getPixelRatio());
-    window.__CHSGS_APPEARANCE__ = appearance;
     validateMaterials(gltf.scene, materialMap, qa);
     if (qa.meshes !== EXPECTED.meshes) qa.errors.push(`Mesh count ${qa.meshes}, expected ${EXPECTED.meshes}.`);
     if (qa.triangles !== EXPECTED.triangles) qa.errors.push(`Triangle count ${qa.triangles}, expected ${EXPECTED.triangles}.`);
     if (qa.materials.length !== EXPECTED.materials || qa.materials.some((name) => !MATERIAL_NAMES.includes(name as typeof MATERIAL_NAMES[number]))) qa.errors.push(`Material family mismatch: ${qa.materials.join(', ')}.`);
     if (qa.tangentsGenerated !== EXPECTED.generatedTangents) qa.errors.push(`Generated ${qa.tangentsGenerated} tangent sets, expected ${EXPECTED.generatedTangents}.`);
     if (qa.missingTangentPrerequisites.length) qa.errors.push('One or more tangent prerequisites are missing.');
-    runAppearanceSwitchingQa(qa, appearance);
+    const facadeNames = new Set(['M_Facade_GLTF', 'M_Facade_GLTF_AO']);
+    const facadeMaterials = [...materialInstances].filter((material) => facadeNames.has(material.name));
+    if (facadeMaterials.length === 0) throw new Error('No facade material instances were found for the external emissive texture.');
+    const emissiveTexture = await new THREE.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}textures/model/emission/T_CHSGS_Facade_Emissive.png`);
+    emissiveTexture.flipY = false;
+    emissiveTexture.colorSpace = THREE.SRGBColorSpace;
+    emissiveTexture.channel = 0;
+    emissiveTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    for (const material of facadeMaterials) { material.emissiveMap = emissiveTexture; material.needsUpdate = true; }
+    const localLights = createModelLocalGateLights();
+    hoverRoot.add(localLights.root);
+    const initialTheme: CHSGSModelTheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+    modelThemeController = new CHSGSModelThemeController(hemisphereLight, keyLight, facadeMaterials, localLights.lights, initialTheme);
+    const debugTheme = getDebugThemeSettings();
+    modelThemeController.setWindowEmissiveColor(debugTheme.windowEmissiveColor);
+    modelThemeController.setWindowEmissiveIntensity(debugTheme.windowEmissiveIntensity);
     configureModelShadows(entryRoot, keyLight, qa);
     framing.neutralBounds = new THREE.Box3().setFromObject(entryRoot);
     framing.frame(entryRoot);
@@ -172,10 +180,6 @@ async function start(): Promise<void> {
     await renderer.compileAsync(scene, camera);
     renderer.render(scene, camera);
     await landingMotion.begin();
-    qaPanel = createQaPanel({
-      debug, qa, camera, framing, hover: hoverController, drag: dragController,
-      hemisphereLight, keyLight, controls: framing.controls, appearance,
-    });
     console.info('CHSGS LAND.01 PC03 QA', qa);
   } catch (error) {
     qa.status = 'fail';
@@ -184,10 +188,6 @@ async function start(): Promise<void> {
     status.innerHTML = `<div><p>Не удалось загрузить интерактивный завод.</p><p><a href="${import.meta.env.BASE_URL}">Повторить загрузку</a> · <a href="https://xn--d1an.xn--p1ai/info_ld_plants/chsgs/">Информация о ЧСГС</a></p></div>`;
     document.body.classList.remove('is-loading');
     status.classList.add('error');
-    qaPanel = createQaPanel({
-      debug, qa, camera, framing, hover: hoverController, drag: dragController,
-      hemisphereLight, keyLight, controls: framing.controls,
-    });
     console.error('CHSGS WEB.02D failed:', error);
   }
 }
@@ -199,7 +199,7 @@ renderer.setAnimationLoop(() => {
   animationTimer.update();
   const deltaSeconds = Math.min(animationTimer.getDelta(), 0.1);
   landingMotion.update(performance.now(), deltaSeconds, dragController.diagnostics.interactionState);
-  appearanceController?.update(deltaSeconds);
+  modelThemeController?.update(deltaSeconds);
   dragController.update(deltaSeconds);
   hoverController.update(deltaSeconds);
   cursorLight.update({
@@ -214,16 +214,11 @@ renderer.setAnimationLoop(() => {
   qa.hierarchy.neutralHoverRotation = Math.abs(qa.hover.currentPassiveYawDeg) < 1e-6
     && Math.abs(qa.hover.currentPassivePitchDeg) < 1e-6
     && qa.hover.currentRollDeg === 0;
-  qaPanel?.refreshHover();
-  qaPanel?.refreshDrag();
   framing.controls?.update();
   if (landingMotion.diagnostics.modelVisible || qa.status === 'loading') renderer.render(scene, camera);
   qa.performance.programs = renderer.info.programs?.length ?? 0;
   qa.performance.drawCalls = renderer.info.render.calls;
   qa.performance.frameTriangles = renderer.info.render.triangles;
-  if (appearanceController) {
-    qa.reveal.visibility = appearanceController.revealSettings.visibility;
-  }
   if (debug || smokeQa) requiredElement('#viewer').dataset.qa = JSON.stringify({
     status: qa.status, meshes: qa.meshes, triangles: qa.triangles, materials: qa.materials.length,
     tangentsGenerated: qa.tangentsGenerated, ao: qa.ao, normalChannels: qa.normalChannels,
