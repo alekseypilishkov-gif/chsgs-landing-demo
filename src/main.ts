@@ -58,7 +58,7 @@ window.__CHSGS_DRAG__ = dragController;
 const landingMotion = new LandingMotion(entryRoot, scrollRoot, heroIdleRoot, camera, (active) => {
   dragController.setEnabled(active);
   hoverController.setEnabled(active);
-  if (!active) hoverController.setPointerInside(false);
+  if (!active) { hoverController.setPointerInside(false); appearanceController?.setPointerInside(false); }
 });
 const qa = createInitialQa({
   camera,
@@ -79,7 +79,10 @@ document.addEventListener('chsgs-theme', () => {
   modelThemeController?.setTheme(theme);
 });
 let debugModel: DebugModelSettings = getDebugModelSettings();
-const applyCurrentDebugModel = () => applyDebugModel(debugModel, keyLight, hemisphereLight, accentLight, appearanceController);
+const applyCurrentDebugModel = () => {
+  applyDebugModel(debugModel, keyLight, hemisphereLight, accentLight, appearanceController);
+  modelThemeController?.setSuppressWindows(!debugModel.original);
+};
 document.addEventListener('chsgs-debug-model', (event: Event) => {
   const detail = (event as CustomEvent<Partial<DebugModelSettings>>).detail ?? {};
   debugModel = { ...debugModel, ...detail };
@@ -109,6 +112,7 @@ function resize(): void {
   camera.updateProjectionMatrix();
   if (framing.framedModel) framing.frame(framing.framedModel);
   qa.pixelRatio = renderer.getPixelRatio();
+  appearanceController?.setFramebufferScale(qa.pixelRatio);
 }
 window.addEventListener('resize', resize);
 resize();
@@ -117,7 +121,7 @@ bindViewerPointer({
   hover: hoverController,
   drag: dragController,
   pointer,
-  getAppearance: () => null,
+  getAppearance: () => appearanceController,
 });
 
 async function start(): Promise<void> {
@@ -147,6 +151,10 @@ async function start(): Promise<void> {
     emissiveTexture.channel = 0;
     emissiveTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     for (const material of facadeMaterials) { material.emissiveMap = emissiveTexture; material.needsUpdate = true; }
+    const appearance = new CHSGSMaterialAppearanceController(materialInstances);
+    appearanceController = appearance;
+    appearance.setFramebufferScale(renderer.getPixelRatio());
+    window.__CHSGS_APPEARANCE__ = appearance;
     const localLights = createModelLocalGateLights();
     hoverRoot.add(localLights.root);
     const initialTheme: CHSGSModelTheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
@@ -200,6 +208,7 @@ renderer.setAnimationLoop(() => {
   const deltaSeconds = Math.min(animationTimer.getDelta(), 0.1);
   landingMotion.update(performance.now(), deltaSeconds, dragController.diagnostics.interactionState);
   modelThemeController?.update(deltaSeconds);
+  appearanceController?.update(deltaSeconds);
   dragController.update(deltaSeconds);
   hoverController.update(deltaSeconds);
   cursorLight.update({

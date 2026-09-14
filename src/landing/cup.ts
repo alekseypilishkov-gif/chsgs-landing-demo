@@ -15,14 +15,33 @@ export class AwardCup {
     for (const video of this.videos) {
       video.muted = true;
       video.playsInline = true;
+      video.preload = 'none';
       video.pause();
       video.addEventListener('loadedmetadata', () => {
         this.time = Math.min(this.time, this.duration);
       });
     }
+    const section = document.querySelector('#achievements');
+    if (section) {
+      const observer = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        this.attachSources();
+        observer.disconnect();
+      }, { rootMargin: '200% 0px' });
+      observer.observe(section);
+    }
     document.addEventListener('chsgs-debug-cup', (event: Event) => {
       this.settings = (event as CustomEvent<DebugCupSettings>).detail ?? this.settings;
     });
+  }
+
+  private attachSources(): void {
+    for (const video of this.videos) {
+      const src = video.dataset.src;
+      if (!src || video.getAttribute('src') === src) continue;
+      video.src = src;
+      video.load();
+    }
   }
 
   private get duration(): number {

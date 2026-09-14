@@ -85,6 +85,8 @@ export class CHSGSModelThemeController {
   private transitionElapsed = 0;
   private activeTheme: CHSGSModelTheme;
 
+  private suppressWindows = false;
+
   constructor(
     private readonly hemisphereLight: THREE.HemisphereLight,
     private readonly keyLight: THREE.DirectionalLight,
@@ -120,6 +122,11 @@ export class CHSGSModelThemeController {
     this.transitionElapsed = 0;
   }
 
+  setSuppressWindows(suppress: boolean): void {
+    this.suppressWindows = suppress;
+    this.apply();
+  }
+
   setWindowEmissiveColor(color: THREE.ColorRepresentation): void {
     this.windowEmissiveColor.set(color);
     this.apply();
@@ -144,25 +151,26 @@ export class CHSGSModelThemeController {
   }
 
   private apply(): void {
-    this.keyLight.color.lerpColors(this.nightDirectionalColor, this.dayDirectionalColor, this.progress);
+    const lightMix = this.suppressWindows ? 1 : this.progress;
+    this.keyLight.color.lerpColors(this.nightDirectionalColor, this.dayDirectionalColor, lightMix);
     this.keyLight.intensity = THREE.MathUtils.lerp(
       MODEL_THEME_CONFIG.night.directionalIntensity,
       MODEL_THEME_CONFIG.day.directionalIntensity,
-      this.progress,
+      lightMix,
     );
-    this.hemisphereLight.color.lerpColors(this.nightHemisphereSky, this.dayHemisphereSky, this.progress);
-    this.hemisphereLight.groundColor.lerpColors(this.nightHemisphereGround, this.dayHemisphereGround, this.progress);
+    this.hemisphereLight.color.lerpColors(this.nightHemisphereSky, this.dayHemisphereSky, lightMix);
+    this.hemisphereLight.groundColor.lerpColors(this.nightHemisphereGround, this.dayHemisphereGround, lightMix);
     this.hemisphereLight.intensity = THREE.MathUtils.lerp(
       MODEL_THEME_CONFIG.night.hemisphereIntensity,
       MODEL_THEME_CONFIG.day.hemisphereIntensity,
-      this.progress,
+      lightMix,
     );
-    const windowIntensity = THREE.MathUtils.lerp(this.windowEmissiveIntensity, 0, this.progress);
+    const windowIntensity = this.suppressWindows ? 0 : THREE.MathUtils.lerp(this.windowEmissiveIntensity, 0, this.progress);
     for (const material of this.facadeMaterials) {
       material.emissive.copy(this.windowEmissiveColor);
       material.emissiveIntensity = windowIntensity;
     }
-    const gateIntensity = THREE.MathUtils.lerp(MODEL_THEME_CONFIG.night.gateLightIntensity, 0, this.progress);
+    const gateIntensity = this.suppressWindows ? 0 : THREE.MathUtils.lerp(MODEL_THEME_CONFIG.night.gateLightIntensity, 0, this.progress);
     for (const light of this.gateLights) {
       light.color.copy(this.gateLightColor);
       light.intensity = gateIntensity;

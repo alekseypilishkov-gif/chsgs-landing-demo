@@ -14,7 +14,7 @@ export function headerMarkup(): string {
         <button id="menu-toggle" class="ld-site-header__burger ld-site-header__icon-button" type="button" aria-label="Меню" aria-expanded="false" aria-controls="main-nav" aria-haspopup="true">${icon.burger}${icon.close}</button>
         <a class="ld-site-header__user ld-site-header__icon-button" href="${factory.profile}" aria-label="Личный кабинет">${icon.user}</a>
       </div>
-      <nav id="main-nav" class="ld-site-header__panel" hidden aria-label="Разделы страницы">${navItems()}</nav>
+      <nav id="main-nav" class="ld-site-header__panel" hidden aria-label="Разделы страницы">${navItems()}<div class="model-view-switch" role="group" aria-label="Вид модели"><button type="button" data-model-view="lit" aria-pressed="true">Текущий</button><button type="button" data-model-view="clay" aria-pressed="false">Изначальный</button></div></nav>
     </header>
     <button id="theme-toggle" class="theme-dock" type="button" aria-label="Светлая тема" aria-pressed="false"><span aria-hidden="true">◐</span></button>
     ${debugDockMarkup()}
@@ -66,7 +66,7 @@ export function videoMarkup(): string {
 
 export function achievementsMarkup(): string {
   return `
-      <section id="achievements" class="section solid achievements-section" aria-labelledby="achievements-title"><div class="award-art" aria-hidden="true"><video class="award-cup award-cup--dark" muted playsinline preload="auto" disablepictureinpicture><source src="${import.meta.env.BASE_URL}media/cup.mp4" type="video/mp4"></video><video class="award-cup award-cup--light" muted playsinline preload="auto" disablepictureinpicture><source src="${import.meta.env.BASE_URL}media/cup-white.mp4" type="video/mp4"></video></div><div class="achievement-copy-track"><div class="achievement-copy"><p class="eyebrow" ${reveal('label')}>06 / МАСШТАБ ПРИСУТСТВИЯ</p><h2 id="achievements-title" ${reveal('heading',.12)}>Глобальное присутствие<br>и достижения</h2><h3 ${reveal('heading',.24)}>${factory.awardTitle}</h3><p ${reveal('body',.36)}>${factory.awardText}</p><div class="global-metrics">${factory.achievements.map((m,i)=>`<div ${reveal('card',i*.12)}><strong>${m.value}</strong><p>${m.label}</p></div>`).join('')}</div></div></div></section>`;
+      <section id="achievements" class="section solid achievements-section" aria-labelledby="achievements-title"><div class="award-art" aria-hidden="true"><video class="award-cup award-cup--dark" muted playsinline preload="none" disablepictureinpicture data-src="${import.meta.env.BASE_URL}media/cup.mp4"></video><video class="award-cup award-cup--light" muted playsinline preload="none" disablepictureinpicture data-src="${import.meta.env.BASE_URL}media/cup-white.mp4"></video></div><div class="achievement-copy-track"><div class="achievement-copy"><p class="eyebrow" ${reveal('label')}>06 / МАСШТАБ ПРИСУТСТВИЯ</p><h2 id="achievements-title" ${reveal('heading',.12)}>Глобальное присутствие<br>и достижения</h2><h3 ${reveal('heading',.24)}>${factory.awardTitle}</h3><p ${reveal('body',.36)}>${factory.awardText}</p><div class="global-metrics">${factory.achievements.map((m,i)=>`<div ${reveal('card',i*.12)}><strong>${m.value}</strong><p>${m.label}</p></div>`).join('')}</div></div></div></section>`;
 }
 
 export function clientsMarkup(): string {
