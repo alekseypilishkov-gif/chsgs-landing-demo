@@ -1,0 +1,138 @@
+.hero-stage {
+	height: 240svh;
+	position: relative;
+	pointer-events: none;
+}
+.hero-sticky {
+	position: sticky;
+	top: 0;
+	height: 100svh;
+	min-height: 650px;
+	overflow: clip;
+	pointer-events: none;
+}
+.hero-heading {
+	position: absolute;
+	left: var(--gutter);
+	top: 15svh;
+	transform-origin: left top;
+	will-change: transform;
+}
+.hero-heading .eyebrow {
+	margin-bottom: 2vw;
+}
+h1 {
+	font-size: clamp(54px, 5vw, 190px);
+	line-height: 1.04;
+	letter-spacing: -0.045em;
+	font-weight: 850;
+	text-transform: uppercase;
+	color: var(--heading-accent);
+}
+h1 span {
+	display: block;
+}
+.hero-copy {
+	position: absolute;
+	left: var(--gutter);
+	top: 54svh;
+	width: 32vw;
+	pointer-events: auto;
+	will-change: opacity, transform;
+}
+.hero-subtitle {
+	font-size: clamp(16px, 1.04vw, 38px);
+	font-weight: 550;
+	line-height: 1.5;
+	margin-bottom: 1vw;
+}
+.hero-description {
+	font-size: clamp(12px, 0.77vw, 26px);
+	color: var(--muted);
+	line-height: 1.6;
+	max-width: 60ch;
+}
+.hero-description p + p {
+	margin-top: 0.6em;
+}
+.hero-bottom {
+	position: absolute;
+	bottom: 6.6svh;
+	left: var(--gutter);
+	right: var(--gutter);
+	display: flex;
+	justify-content: space-between;
+	gap: 20px;
+	align-items: center;
+	color: var(--muted);
+	font-size: clamp(10px, 0.62vw, 21px);
+}
+.hero-bottom a {
+	pointer-events: auto;
+	color: var(--text);
+	border-bottom: 1px solid var(--border);
+	padding: 8px 0;
+}
+.hero-bottom a span {
+	padding-left: 20px;
+}
+.hero-enter {
+	opacity: 0;
+	transform: translateY(18px);
+}
+.metrics {
+	position: absolute;
+	right: var(--gutter);
+	width: 46vw;
+	top: 25svh;
+	opacity: 0;
+	transform: translateY(14svh);
+	visibility: hidden;
+	pointer-events: none;
+}
+.metrics.is-visible {
+	visibility: visible;
+	pointer-events: auto;
+}
+.metrics .eyebrow {
+	margin-bottom: 2svh;
+}
+.metric-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 2svh 2.4vw;
+}
+.metric {
+	min-width: 0;
+	border-top: 1px solid var(--border);
+	padding-top: 1.5svh;
+}
+.metric-number {
+	display: block;
+	font-size: clamp(24px, 2.5vw, 86px);
+	font-weight: 750;
+	line-height: 1.1;
+	letter-spacing: -0.055em;
+	white-space: nowrap;
+	color: var(--heading-accent);
+	font-variant-numeric: tabular-nums;
+}
+.metric h3 {
+	font-size: clamp(13px, 0.88vw, 28px);
+	font-weight: 500;
+	line-height: 1.3;
+	letter-spacing: 0;
+	margin: 10px 0;
+}
+.metric p,
+.metric a {
+	font-size: clamp(10px, 0.62vw, 21px);
+	line-height: 1.55;
+	color: var(--muted);
+}
+.metric a {
+	display: inline-block;
+	color: var(--text);
+	padding-bottom: 3px;
+	border-bottom: 1px solid var(--heading-accent);
+}

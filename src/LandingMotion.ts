@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { factory } from './factoryContent';
-import { formatMetric } from './landing';
+import { formatMetric } from './landing/index';
 
 const clamp = (n: number) => Math.max(0,Math.min(1,n));
 const smooth = (n: number) => {const t=clamp(n);return t*t*(3-2*t);};

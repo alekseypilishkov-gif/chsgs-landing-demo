@@ -1,0 +1,34 @@
+.qa-panel {
+	position: fixed;
+	z-index: 80;
+	top: 90px;
+	left: 12px;
+	width: 360px;
+	max-height: 70vh;
+	overflow: auto;
+	background: #202020;
+	color: #fff;
+	padding: 15px;
+	font-size: 11px;
+}
+.qa-panel h2 {
+	font-size: 14px;
+}
+.qa-panel pre {
+	white-space: pre-wrap;
+}
+.qa-panel button {
+	background: #444;
+	border: 1px solid #888;
+	font-size: 11px;
+	margin: 3px;
+}
+.qa-panel label {
+	display: block;
+}
+.qa-panel input {
+	max-width: 100%;
+}
+.qa-panel input[type="range"] {
+	width: 100%;
+}

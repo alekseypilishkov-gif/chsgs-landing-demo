@@ -1,0 +1,138 @@
+.site-header {
+	position: fixed;
+	z-index: 30;
+	left: var(--gutter);
+	right: var(--gutter);
+	top: 20px;
+	min-height: 64px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--header);
+	backdrop-filter: blur(20px);
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	padding: 7px 12px;
+}
+.brand {
+	flex: none;
+}
+.brand img {
+	width: 65px;
+	height: 40px;
+	object-fit: contain;
+}
+.header-factory {
+	font-size: 10px;
+	letter-spacing: 0.15em;
+	white-space: nowrap;
+	border-left: 1px solid var(--border);
+	padding-left: 20px;
+}
+#main-nav {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: clamp(16px, 1.6vw, 54px);
+	flex: 1;
+}
+#main-nav a {
+	font-size: clamp(11px, 0.7vw, 24px);
+	line-height: 1.3;
+	padding: 12px 0;
+	border-bottom: 1px solid transparent;
+}
+#main-nav a:hover {
+	border-color: var(--heading-accent);
+}
+.icon-button {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid var(--border);
+	border-radius: 5px;
+	flex: none;
+	font-size: 24px;
+}
+.menu-toggle {
+	display: none;
+	border: 0;
+	background: none;
+	width: 44px;
+	height: 44px;
+	padding: 12px;
+}
+.menu-toggle span {
+	display: block;
+	height: 1px;
+	background: var(--text);
+	margin: 6px 0;
+}
+#viewer {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.25s;
+}
+#viewer canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+	touch-action: pan-y;
+	pointer-events: auto;
+}
+#viewer[data-active="false"] canvas {
+	pointer-events: none;
+}
+canvas.chsgs-drag-enabled {
+	cursor: grab;
+}
+canvas.chsgs-drag-active {
+	cursor: grabbing;
+}
+#status {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: grid;
+	place-items: center;
+	background: var(--bg);
+	padding: 24px;
+}
+.loader-content {
+	width: min(400px, 86vw);
+	text-align: center;
+}
+.loader-content img {
+	margin: 0 auto 36px;
+}
+.loader-content p {
+	font-size: 10px;
+	letter-spacing: 0.08em;
+	overflow-wrap: anywhere;
+}
+.load-track {
+	height: 1px;
+	background: var(--border);
+	margin: 24px 0 16px;
+}
+#load-bar {
+	display: block;
+	transform-origin: left;
+	width: 100%;
+	height: 2px;
+	background: var(--accent);
+	transform: scaleX(0);
+}
+#load-label {
+	font-size: 12px;
+	color: var(--muted);
+}
+#status.error {
+	color: var(--text);
+}
