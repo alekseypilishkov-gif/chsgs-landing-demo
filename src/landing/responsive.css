@@ -241,8 +241,11 @@
 	.service-row h3 {
 		font-size: 27px;
 	}
-	.achievement-copy {
+	.achievement-copy-track {
 		width: 66%;
+	}
+	.award-art {
+		clip-path: inset(-30% -30vw -20% 50%);
 	}
 	.achievement-copy h2 {
 		font-size: 36px;
@@ -261,15 +264,10 @@
 	.global-metrics p {
 		font-size: 10px;
 	}
-	.award-placeholder {
-		width: 25vw;
-		padding: 20px;
-		top: 25%;
-	}
-	.award-small {
-		width: 23vw;
-		right: 7vw;
-		top: 63%;
+	.award-cup {
+		right: -10vw;
+		width: min(52vw, 520px);
+		height: 108%;
 	}
 	.client-grid,
 	.client-placeholder-grid {
@@ -498,12 +496,14 @@
 		font-size: 10px;
 	}
 	.achievements-section {
-		min-height: 980px;
-		align-items: start;
-		padding-bottom: 330px;
+		min-height: 1100px;
+		padding-bottom: 280px;
 	}
-	.achievement-copy {
+	.achievement-copy-track {
 		width: 100%;
+	}
+	.award-art {
+		clip-path: none;
 	}
 	.achievement-copy h2 {
 		font-size: 32px;
@@ -526,27 +526,13 @@
 	.global-metrics p {
 		font-size: 9px;
 	}
-	.award-placeholder {
-		width: 45vw;
+	.award-cup {
+		right: -18vw;
 		top: auto;
-		bottom: 36px;
-		right: 20px;
-		padding: 18px;
-		font-size: 11px;
-	}
-	.award-placeholder small {
-		font-size: 36px;
-	}
-	.award-small {
-		width: 38vw;
-		right: auto;
-		left: 20px;
-		bottom: 64px;
-		aspect-ratio: 1;
-		z-index: 1;
-	}
-	.award-small small {
-		font-size: 25px;
+		bottom: -8%;
+		width: min(78vw, 420px);
+		height: 58%;
+		object-position: 60% 70%;
 	}
 	.client-tabs {
 		gap: 7px;

@@ -9,12 +9,37 @@ export type DebugModelSettings = {
   keyIntensity: number;
   accentIntensity: number;
 };
+export type DebugCupSettings = {
+  yStart: number;
+  yEnd: number;
+  copyYStart: number;
+  copyYEnd: number;
+  x: number;
+  scale: number;
+  response: number;
+  scrubStart: number;
+  scrubEnd: number;
+};
 const DEBUG_STORAGE_KEY = 'chsgs-debug-model';
+const DEBUG_CUP_STORAGE_KEY = 'chsgs-debug-cup';
 const DEBUG_MODEL_PRESETS: Record<DebugViewMode, Omit<DebugModelSettings, 'viewMode'>> = {
   clay: { original: false, ao: true, normals: true, reveal: true, accent: false, keyIntensity: 2.8, accentIntensity: 140 },
   lit: { original: true, ao: false, normals: true, reveal: false, accent: true, keyIntensity: 4.4, accentIntensity: 380 },
 };
+export const DEBUG_CUP_DEFAULTS: DebugCupSettings = {
+  yStart: 12,
+  yEnd: 32,
+  copyYStart: 0,
+  copyYEnd: 8,
+  x: 2,
+  scale: 1.06,
+  response: 10,
+  scrubStart: 0,
+  scrubEnd: 1,
+};
+const CUP_KEYS = ['yStart', 'yEnd', 'copyYStart', 'copyYEnd', 'x', 'scale', 'response', 'scrubStart', 'scrubEnd'] as const;
 const debugPanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll<HTMLInputElement>('input[data-debug]'));
+const cupPanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll<HTMLInputElement>('input[data-cup]'));
 const readDebugInputs = (inputs: HTMLInputElement[]): DebugModelSettings => {
   const state: DebugModelSettings = { viewMode: 'clay', ...DEBUG_MODEL_PRESETS.clay };
   for (const input of inputs) {
@@ -62,37 +87,93 @@ const hydrateDebugState = (stored: Partial<DebugModelSettings> | null): DebugMod
     accentIntensity: typeof stored.accentIntensity === 'number' && Number.isFinite(stored.accentIntensity) ? stored.accentIntensity : base.accentIntensity,
   };
 };
+const readCupInputs = (inputs: HTMLInputElement[]): DebugCupSettings => {
+  const state = { ...DEBUG_CUP_DEFAULTS };
+  for (const input of inputs) {
+    const key = input.dataset.cup as typeof CUP_KEYS[number] | undefined;
+    if (!key || !CUP_KEYS.includes(key)) continue;
+    const value = Number(input.value);
+    if (Number.isFinite(value)) state[key] = value;
+  }
+  return state;
+};
+const writeCupInputs = (inputs: HTMLInputElement[], state: DebugCupSettings): void => {
+  for (const input of inputs) {
+    const key = input.dataset.cup as typeof CUP_KEYS[number] | undefined;
+    if (!key || !CUP_KEYS.includes(key)) continue;
+    input.value = String(state[key]);
+  }
+};
+const hydrateCupState = (stored: Partial<DebugCupSettings> | null): DebugCupSettings => {
+  const state = { ...DEBUG_CUP_DEFAULTS };
+  if (!stored) return state;
+  for (const key of CUP_KEYS) {
+    const value = stored[key];
+    if (typeof value === 'number' && Number.isFinite(value)) state[key] = value;
+  }
+  return state;
+};
+const formatRangeOutput = (input: HTMLInputElement): string => {
+  const value = Number(input.value);
+  const fraction = input.step.includes('.') ? input.step.replace(/^[0-9]*\./, '').length : 0;
+  return fraction ? value.toFixed(fraction) : String(Math.round(value));
+};
 export function getDebugModelSettings(): DebugModelSettings {
   const panel = document.querySelector<HTMLElement>('#debug-panel');
   if (!panel) return { viewMode: 'clay', ...DEBUG_MODEL_PRESETS.clay };
   return readDebugInputs(debugPanelInputs(panel));
 }
+export function getDebugCupSettings(): DebugCupSettings {
+  const panel = document.querySelector<HTMLElement>('#debug-panel');
+  if (!panel) return { ...DEBUG_CUP_DEFAULTS };
+  return readCupInputs(cupPanelInputs(panel));
+}
+
+const DEBUG_TAB_STORAGE_KEY = 'chsgs-debug-tab';
+type DebugTabId = 'model' | 'cup';
 
 export function debugDockMarkup(): string {
   return `
     <div class="debug-dock">
       <button id="debug-toggle" class="debug-dock__button" type="button" aria-label="Отладка" aria-expanded="false" aria-controls="debug-panel"></button>
       <div id="debug-panel" class="debug-dock__panel" hidden>
-        <fieldset class="debug-dock__group">
-          <legend>Режим</legend>
-          <div class="debug-dock__modes">
-            <label class="debug-dock__mode"><input data-debug="viewMode" type="radio" name="debug-view-mode" value="clay" checked>Изначальный</label>
-            <label class="debug-dock__mode"><input data-debug="viewMode" type="radio" name="debug-view-mode" value="lit">Подсветка</label>
-          </div>
-        </fieldset>
-        <fieldset class="debug-dock__group">
-          <legend>Модель</legend>
-          <label class="debug-dock__row"><input data-debug="original" type="checkbox">Подсветка модели</label>
-          <label class="debug-dock__row"><input data-debug="ao" type="checkbox" checked>Окклюзия</label>
-          <label class="debug-dock__row"><input data-debug="normals" type="checkbox" checked>Карты нормалей</label>
-          <label class="debug-dock__row"><input data-debug="reveal" type="checkbox" checked>Проявление курсором</label>
-        </fieldset>
-        <fieldset class="debug-dock__group">
-          <legend>Свет</legend>
-          <label class="debug-dock__row"><input data-debug="accent" type="checkbox">Источник света</label>
-          <label class="debug-dock__slider"><span>Основной свет <output data-debug-output="keyIntensity">2.8</output></span><input data-debug="keyIntensity" type="range" min="0" max="6" step="0.05" value="2.8"></label>
-          <label class="debug-dock__slider"><span>Свет курсора <output data-debug-output="accentIntensity">140</output></span><input data-debug="accentIntensity" type="range" min="0" max="400" step="5" value="140"></label>
-        </fieldset>
+        <div class="debug-dock__tabs" role="tablist" aria-label="Отладка">
+          <button class="debug-dock__tab" type="button" role="tab" id="debug-tab-model-btn" data-tab="model" aria-controls="debug-tab-model" aria-selected="true">Модель</button>
+          <button class="debug-dock__tab" type="button" role="tab" id="debug-tab-cup-btn" data-tab="cup" aria-controls="debug-tab-cup" aria-selected="false" tabindex="-1">Кубок</button>
+        </div>
+        <div id="debug-tab-model" class="debug-dock__pane" role="tabpanel" aria-labelledby="debug-tab-model-btn">
+          <fieldset class="debug-dock__group">
+            <legend>Режим</legend>
+            <div class="debug-dock__modes">
+              <label class="debug-dock__mode"><input data-debug="viewMode" type="radio" name="debug-view-mode" value="clay" checked>Изначальный</label>
+              <label class="debug-dock__mode"><input data-debug="viewMode" type="radio" name="debug-view-mode" value="lit">Подсветка</label>
+            </div>
+          </fieldset>
+          <fieldset class="debug-dock__group">
+            <legend>Модель</legend>
+            <label class="debug-dock__row"><input data-debug="original" type="checkbox">Подсветка модели</label>
+            <label class="debug-dock__row"><input data-debug="ao" type="checkbox" checked>Окклюзия</label>
+            <label class="debug-dock__row"><input data-debug="normals" type="checkbox" checked>Карты нормалей</label>
+            <label class="debug-dock__row"><input data-debug="reveal" type="checkbox" checked>Проявление курсором</label>
+          </fieldset>
+          <fieldset class="debug-dock__group">
+            <legend>Свет</legend>
+            <label class="debug-dock__row"><input data-debug="accent" type="checkbox">Источник света</label>
+            <label class="debug-dock__slider"><span>Основной свет <output data-debug-output="keyIntensity">2.8</output></span><input data-debug="keyIntensity" type="range" min="0" max="6" step="0.05" value="2.8"></label>
+            <label class="debug-dock__slider"><span>Свет курсора <output data-debug-output="accentIntensity">140</output></span><input data-debug="accentIntensity" type="range" min="0" max="400" step="5" value="140"></label>
+          </fieldset>
+        </div>
+        <div id="debug-tab-cup" class="debug-dock__pane" role="tabpanel" aria-labelledby="debug-tab-cup-btn" hidden>
+          <label class="debug-dock__slider"><span>Кубок вход Y <output data-cup-output="yStart">12</output></span><input data-cup="yStart" type="range" min="-40" max="80" step="1" value="12"></label>
+          <label class="debug-dock__slider"><span>Кубок выход Y <output data-cup-output="yEnd">32</output></span><input data-cup="yEnd" type="range" min="-40" max="80" step="1" value="32"></label>
+          <label class="debug-dock__slider"><span>Текст вход Y <output data-cup-output="copyYStart">0</output></span><input data-cup="copyYStart" type="range" min="-40" max="80" step="1" value="0"></label>
+          <label class="debug-dock__slider"><span>Текст выход Y <output data-cup-output="copyYEnd">8</output></span><input data-cup="copyYEnd" type="range" min="-40" max="80" step="1" value="8"></label>
+          <label class="debug-dock__slider"><span>Сдвиг X <output data-cup-output="x">2</output></span><input data-cup="x" type="range" min="-20" max="20" step="0.5" value="2"></label>
+          <label class="debug-dock__slider"><span>Масштаб <output data-cup-output="scale">1.06</output></span><input data-cup="scale" type="range" min="0.6" max="1.8" step="0.01" value="1.06"></label>
+          <label class="debug-dock__slider"><span>Инерция <output data-cup-output="response">10</output></span><input data-cup="response" type="range" min="1" max="30" step="0.5" value="10"></label>
+          <label class="debug-dock__slider"><span>Старт видео <output data-cup-output="scrubStart">0.00</output></span><input data-cup="scrubStart" type="range" min="0" max="1" step="0.01" value="0"></label>
+          <label class="debug-dock__slider"><span>Конец видео <output data-cup-output="scrubEnd">1.00</output></span><input data-cup="scrubEnd" type="range" min="0" max="1" step="0.01" value="1"></label>
+        </div>
       </div>
     </div>`;
 }
@@ -101,23 +182,73 @@ export function initDebug(): void {
   const dock=document.querySelector<HTMLElement>('.debug-dock')!;
   const button=document.querySelector<HTMLButtonElement>('#debug-toggle')!;
   const panel=document.querySelector<HTMLElement>('#debug-panel')!;
+  const tabs=Array.from(panel.querySelectorAll<HTMLButtonElement>('[role=tab][data-tab]'));
+  const panes=new Map<DebugTabId, HTMLElement>([
+    ['model', panel.querySelector('#debug-tab-model')!],
+    ['cup', panel.querySelector('#debug-tab-cup')!],
+  ]);
+  const setTab=(id: DebugTabId)=>{
+    for(const tab of tabs){
+      const selected=tab.dataset.tab===id;
+      tab.setAttribute('aria-selected',String(selected));
+      tab.tabIndex=selected?0:-1;
+    }
+    for(const [paneId,pane] of panes) pane.hidden=paneId!==id;
+    try { localStorage.setItem(DEBUG_TAB_STORAGE_KEY, id); } catch { /* Storage may be disabled. */ }
+  };
+  const readStoredTab=(): DebugTabId=>{
+    try {
+      const stored=localStorage.getItem(DEBUG_TAB_STORAGE_KEY);
+      if(stored==='cup'||stored==='model') return stored;
+    } catch { /* Storage may be disabled. */ }
+    return 'model';
+  };
+  setTab(readStoredTab());
+  for(const tab of tabs){
+    tab.addEventListener('click',()=>{
+      const id=tab.dataset.tab;
+      if(id==='model'||id==='cup') setTab(id);
+    });
+    tab.addEventListener('keydown',e=>{
+      if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight') return;
+      e.preventDefault();
+      const delta=e.key==='ArrowRight'?1:-1;
+      const next=tabs[(tabs.indexOf(tab)+delta+tabs.length)%tabs.length];
+      const id=next.dataset.tab;
+      if(id==='model'||id==='cup'){ setTab(id); next.focus(); }
+    });
+  }
   const inputs=debugPanelInputs(panel);
+  const cupInputs=cupPanelInputs(panel);
   const setOpen=(open:boolean)=>{button.setAttribute('aria-expanded',String(open));panel.hidden=!open;dock.classList.toggle('is-open',open);};
   button.addEventListener('click',()=>setOpen(button.getAttribute('aria-expanded')!=='true'));
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){setOpen(false);button.focus();}});
   document.addEventListener('click',e=>{if(!(e.target as HTMLElement).closest('.debug-dock'))setOpen(false);});
   let stored: Partial<DebugModelSettings> | null = null;
+  let storedCup: Partial<DebugCupSettings> | null = null;
   try { stored = JSON.parse(localStorage.getItem(DEBUG_STORAGE_KEY) ?? 'null') as Partial<DebugModelSettings> | null; } catch { stored = null; }
+  try { storedCup = JSON.parse(localStorage.getItem(DEBUG_CUP_STORAGE_KEY) ?? 'null') as Partial<DebugCupSettings> | null; } catch { storedCup = null; }
   writeDebugInputs(inputs, hydrateDebugState(stored));
+  writeCupInputs(cupInputs, hydrateCupState(storedCup));
+  const syncOutputs=(rangeInputs: HTMLInputElement[], attr: 'debug' | 'cup')=>{
+    for(const input of rangeInputs){
+      if(input.type!=='range')continue;
+      const key=attr==='debug'?input.dataset.debug:input.dataset.cup;
+      const output=panel.querySelector(`[data-${attr}-output="${key}"]`);
+      if(output)output.textContent=formatRangeOutput(input);
+    }
+  };
   const emit=()=>{
     const state=readDebugInputs(inputs);
-    for(const input of inputs){
-      if(input.type!=='range')continue;
-      const output=panel.querySelector(`[data-debug-output="${input.dataset.debug}"]`);
-      if(output)output.textContent=Number(input.value).toFixed(input.step.includes('.')?2:0);
-    }
+    syncOutputs(inputs,'debug');
     try { localStorage.setItem(DEBUG_STORAGE_KEY, JSON.stringify(state)); } catch { /* Storage may be disabled. */ }
     document.dispatchEvent(new CustomEvent('chsgs-debug-model',{detail:state}));
+  };
+  const emitCup=()=>{
+    const state=readCupInputs(cupInputs);
+    syncOutputs(cupInputs,'cup');
+    try { localStorage.setItem(DEBUG_CUP_STORAGE_KEY, JSON.stringify(state)); } catch { /* Storage may be disabled. */ }
+    document.dispatchEvent(new CustomEvent('chsgs-debug-cup',{detail:state}));
   };
   inputs.forEach(input=>input.addEventListener(input.type==='range'?'input':'change',()=>{
     if(input.dataset.debug==='viewMode'&&input.checked&&(input.value==='clay'||input.value==='lit')){
@@ -125,5 +256,7 @@ export function initDebug(): void {
     }
     emit();
   }));
+  cupInputs.forEach(input=>input.addEventListener('input',emitCup));
   emit();
+  emitCup();
 }

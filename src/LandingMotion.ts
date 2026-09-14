@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { factory } from './factoryContent';
 import { formatMetric } from './landing/index';
+import { AwardCup } from './landing/cup';
 
 const clamp = (n: number) => Math.max(0,Math.min(1,n));
 const smooth = (n: number) => {const t=clamp(n);return t*t*(3-2*t);};
@@ -21,8 +22,7 @@ export class LandingMotion {
   private readonly viewer=el('#viewer');
   private readonly enters=Array.from(document.querySelectorAll<HTMLElement>('.hero-enter'));
   private readonly counters=Array.from(document.querySelectorAll<HTMLElement>('[data-counter]'));
-  private readonly primaryAward=el('[data-award=primary]');
-  private readonly secondaryAward=el('[data-award=secondary]');
+  private readonly cup=new AwardCup(this.reduced);
   private ranges:Record<string,SectionRange>={};
   private layoutDirty=true;
   private scrollDirty=true;
@@ -135,9 +135,12 @@ export class LandingMotion {
       this.entry.rotation.y=this.reduced.matches?0:THREE.MathUtils.degToRad(-5)*remaining;
       if(t>=1){this.entry.position.set(0,0,0);this.entry.rotation.set(0,0,0);this.showCopy();}
     }
+    const y=window.scrollY;const h=this.height;
+    const award=this.ranges['#achievements'];
+    if(award)this.cup.update(clamp((y+h-award.top)/(h+award.height)),dt,h);
     if(!this.scrollDirty&&this.introComplete){this.updateHeroIdle(now,dt,interactionState);return;}
     this.scrollDirty=false;
-    const y=window.scrollY;const h=this.height;const tablet=this.width<=900;const mobile=this.width<=540;
+    const tablet=this.width<=900;const mobile=this.width<=540;
     const hero=this.ranges['.hero-stage']!;const quality=this.ranges['#quality']!;const qbody=this.ranges['.quality-body']!;const qmodel=this.ranges['.quality-model-space']!;const service=this.ranges['#service']!;
     const progress=smooth((y-hero.top)/(hero.height-h)*1.35);this.diagnostics.heroProgress=progress;
     const reduce=this.reduced.matches;this.diagnostics.reducedMotion=reduce;
@@ -188,8 +191,6 @@ export class LandingMotion {
     this.scrollRoot.rotation.set(0,yaw,0);this.scrollRoot.scale.setScalar(scale);
     this.transformedCenter.copy(this.center).multiplyScalar(scale).applyAxisAngle(THREE.Object3D.DEFAULT_UP,yaw);
     this.scrollRoot.position.copy(this.center).sub(this.transformedCenter).addScaledVector(this.right,(x-neutralNdc.x)*heightAtCenter*this.camera.aspect*.5).addScaledVector(this.up,(ndcY-neutralNdc.y)*heightAtCenter*.5);
-    const award=this.ranges['#achievements']!;const ap=clamp((y+h-award.top)/(h+award.height))-.5;
-    this.primaryAward.style.transform=`translateY(${reduce?0:ap*70}px)`;this.secondaryAward.style.transform=`translateY(${reduce?0:-ap*42}px)`;
     // Solid covering planes advance first; their content follows at a smaller rate.
     for(const selector of ['#production','#service']){const range=this.ranges[selector]!;const arrival=clamp((range.top-y)/h);const content=el(`${selector} .section-content`);content.style.transform=`translateY(${reduce?0:arrival*(selector==='#service'?38:65)}px)`;}
     // Expose diagnostics in the DOM for read-only browser smoke checks.

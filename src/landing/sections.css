@@ -219,15 +219,25 @@
 	border-bottom: 1px solid var(--border);
 }
 .achievements-section {
-	min-height: 100svh;
-	overflow: clip;
-	background: var(--surface);
+	z-index: 4;
+	min-height: 160svh;
+	overflow: visible;
+	background: #232323;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
+	padding-top: clamp(96px, 16vh, 220px);
+	padding-bottom: clamp(120px, 28vh, 320px);
+}
+:root[data-theme=light] .achievements-section {
+	background: #c8c8c6;
+}
+.achievement-copy-track {
+	width: 58%;
+	align-self: stretch;
 }
 .achievement-copy {
-	position: relative;
-	width: 62%;
+	position: sticky;
+	top: calc(var(--sticky-header-top) + var(--sticky-header-height) + var(--sticky-header-gap));
 	z-index: 2;
 }
 .achievement-copy h2 {
@@ -267,43 +277,40 @@
 .award-art {
 	position: absolute;
 	inset: 0;
+	z-index: 1;
 	pointer-events: none;
+	transform-origin: 100% 42%;
+	will-change: transform;
+	clip-path: inset(-30% -30vw -20% 56%);
 }
-.award-placeholder {
+.award-cup {
 	position: absolute;
-	right: 4vw;
-	top: 13%;
-	width: 25vw;
-	aspect-ratio: 0.75;
-	border: 1px solid var(--border);
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	padding: 2vw;
-	background: var(--bg);
-	color: var(--muted);
-	font-size: clamp(12px, 1vw, 30px);
-	line-height: 1.5;
+	right: -10vw;
+	top: -6%;
+	width: min(44vw, 680px);
+	height: 124%;
+	display: block;
+	object-fit: cover;
+	object-position: 62% 40%;
+	user-select: none;
 }
-.award-placeholder > span:first-child {
-	font-size: 0.6em;
-	letter-spacing: 0.15em;
+:root[data-theme=dark] .award-cup {
+	mix-blend-mode: lighten;
 }
-.award-placeholder small {
-	font-size: 4vw;
-	font-weight: 300;
-	color: var(--heading-accent);
+:root[data-theme=light] .award-cup {
+	mix-blend-mode: darken;
 }
-.award-small {
-	width: 17vw;
-	right: 18vw;
-	top: 58%;
-	aspect-ratio: 1.2;
-	background: var(--surface);
-	box-shadow: 0 12px 32px rgb(0 0 0 / 0.06);
+.award-cup--light {
+	display: none;
 }
-.award-small small {
-	font-size: 2vw;
+:root[data-theme=light] .award-cup--dark {
+	display: none;
+}
+:root[data-theme=light] .award-cup--light {
+	display: block;
+}
+.clients-section {
+	z-index: 4;
 }
 .clients-section .section-heading h2 {
 	max-width: 26ch;

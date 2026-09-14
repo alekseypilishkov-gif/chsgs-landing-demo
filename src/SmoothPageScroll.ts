@@ -28,6 +28,8 @@ export class SmoothPageScroll {
   };
 
   private onWheel = (event: WheelEvent): void => {
+    const source = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : null;
+    if (source?.closest('.debug-dock')) return;
     if (this.reduced.matches || event.ctrlKey || document.body.classList.contains('is-loading')) return;
     const maximum = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     if (!maximum) return;
