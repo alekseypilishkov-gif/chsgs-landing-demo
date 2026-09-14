@@ -222,14 +222,14 @@
 	z-index: 4;
 	min-height: 220svh;
 	overflow: visible;
-	background: #232323;
+	background: var(--achievements-bg-dark, #1f1f1f);
 	display: flex;
 	align-items: flex-start;
 	padding-top: clamp(96px, 16vh, 220px);
 	padding-bottom: clamp(120px, 28vh, 320px);
 }
 :root[data-theme=light] .achievements-section {
-	background: #c8c8c6;
+	background: var(--achievements-bg-light, #c0c1be);
 }
 .achievement-copy-track {
 	width: 58%;
@@ -296,10 +296,20 @@
 	object-position: 48% center;
 	user-select: none;
 }
-:root[data-theme=dark] .award-cup {
+/* Plate variants, switchable from the debug dock. Default is no blending: the section
+   colour is matched to the decoded backdrop of the clip, which keeps the dark pedestal.
+   The parallax transform on .award-art isolates it, so a working blend has to sit on the
+   group; on the video itself it would composite against nothing (the "legacy" variant). */
+:root[data-cup-plate=blend][data-theme=dark] .award-art {
 	mix-blend-mode: lighten;
 }
-:root[data-theme=light] .award-cup {
+:root[data-cup-plate=blend][data-theme=light] .award-art {
+	mix-blend-mode: darken;
+}
+:root[data-cup-plate=legacy][data-theme=dark] .award-cup {
+	mix-blend-mode: lighten;
+}
+:root[data-cup-plate=legacy][data-theme=light] .award-cup {
 	mix-blend-mode: darken;
 }
 .award-cup--light {

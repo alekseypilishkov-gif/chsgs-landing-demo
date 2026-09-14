@@ -20,8 +20,22 @@ export type DebugCupSettings = {
   scrubStart: number;
   scrubEnd: number;
 };
+export type DebugPlateMode = 'match' | 'blend' | 'legacy';
+export type DebugPlateSettings = {
+  mode: DebugPlateMode;
+  bgDark: string;
+  bgLight: string;
+};
 const DEBUG_STORAGE_KEY = 'chsgs-debug-model';
 const DEBUG_CUP_STORAGE_KEY = 'chsgs-debug-cup-v2';
+const DEBUG_PLATE_STORAGE_KEY = 'chsgs-debug-plate';
+/* Colours are the decoded backdrops of the clips; blend variants add a level of margin
+   in the direction the blend keeps, so per-platform rounding cannot reveal a plate. */
+const DEBUG_PLATE_PRESETS: Record<DebugPlateMode, Omit<DebugPlateSettings, 'mode'>> = {
+  match: { bgDark: '#1f1f1f', bgLight: '#c0c1be' },
+  blend: { bgDark: '#212121', bgLight: '#bebebc' },
+  legacy: { bgDark: '#232323', bgLight: '#c8c8c6' },
+};
 const DEBUG_MODEL_PRESETS: Record<DebugViewMode, Omit<DebugModelSettings, 'viewMode'>> = {
   clay: { original: false, ao: true, normals: true, reveal: true, accent: false, keyIntensity: 2.8, accentIntensity: 140 },
   lit: { original: true, ao: false, normals: true, reveal: false, accent: true, keyIntensity: 4.4, accentIntensity: 380 },
@@ -113,6 +127,42 @@ const hydrateCupState = (stored: Partial<DebugCupSettings> | null): DebugCupSett
   }
   return state;
 };
+const platePanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll<HTMLInputElement>('input[data-plate]'));
+const readPlateInputs = (inputs: HTMLInputElement[]): DebugPlateSettings => {
+  const state: DebugPlateSettings = { mode: 'match', ...DEBUG_PLATE_PRESETS.match };
+  for (const input of inputs) {
+    const key = input.dataset.plate;
+    if (key === 'mode') {
+      if (input.checked && (input.value === 'match' || input.value === 'blend' || input.value === 'legacy')) state.mode = input.value;
+      continue;
+    }
+    if (key === 'bgDark' || key === 'bgLight') state[key] = input.value;
+  }
+  return state;
+};
+const writePlateInputs = (inputs: HTMLInputElement[], state: DebugPlateSettings): void => {
+  for (const input of inputs) {
+    const key = input.dataset.plate;
+    if (key === 'mode') {
+      input.checked = input.value === state.mode;
+      continue;
+    }
+    if (key === 'bgDark' || key === 'bgLight') input.value = state[key];
+  }
+};
+const hydratePlateState = (stored: Partial<DebugPlateSettings> | null): DebugPlateSettings => {
+  const mode: DebugPlateMode = stored?.mode === 'blend' || stored?.mode === 'legacy' ? stored.mode : 'match';
+  const base = { mode, ...DEBUG_PLATE_PRESETS[mode] };
+  if (!stored) return base;
+  const colour = (value: unknown, fallback: string) => (typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback);
+  return { mode, bgDark: colour(stored.bgDark, base.bgDark), bgLight: colour(stored.bgLight, base.bgLight) };
+};
+const applyPlateState = (state: DebugPlateSettings): void => {
+  const root = document.documentElement;
+  root.dataset.cupPlate = state.mode;
+  root.style.setProperty('--achievements-bg-dark', state.bgDark);
+  root.style.setProperty('--achievements-bg-light', state.bgLight);
+};
 const formatRangeOutput = (input: HTMLInputElement): string => {
   const value = Number(input.value);
   const fraction = input.step.includes('.') ? input.step.replace(/^[0-9]*\./, '').length : 0;
@@ -130,7 +180,8 @@ export function getDebugCupSettings(): DebugCupSettings {
 }
 
 const DEBUG_TAB_STORAGE_KEY = 'chsgs-debug-tab';
-type DebugTabId = 'model' | 'cup';
+type DebugTabId = 'model' | 'cup' | 'plate';
+const isTabId = (value: string | undefined): value is DebugTabId => value === 'model' || value === 'cup' || value === 'plate';
 
 export function debugDockMarkup(): string {
   return `
@@ -140,6 +191,7 @@ export function debugDockMarkup(): string {
         <div class="debug-dock__tabs" role="tablist" aria-label="Отладка">
           <button class="debug-dock__tab" type="button" role="tab" id="debug-tab-model-btn" data-tab="model" aria-controls="debug-tab-model" aria-selected="true">Модель</button>
           <button class="debug-dock__tab" type="button" role="tab" id="debug-tab-cup-btn" data-tab="cup" aria-controls="debug-tab-cup" aria-selected="false" tabindex="-1">Кубок</button>
+          <button class="debug-dock__tab" type="button" role="tab" id="debug-tab-plate-btn" data-tab="plate" aria-controls="debug-tab-plate" aria-selected="false" tabindex="-1">Подложка</button>
         </div>
         <div id="debug-tab-model" class="debug-dock__pane" role="tabpanel" aria-labelledby="debug-tab-model-btn">
           <fieldset class="debug-dock__group">
@@ -174,6 +226,21 @@ export function debugDockMarkup(): string {
           <label class="debug-dock__slider"><span>Старт видео <output data-cup-output="scrubStart">0.00</output></span><input data-cup="scrubStart" type="range" min="0" max="1" step="0.01" value="0"></label>
           <label class="debug-dock__slider"><span>Конец видео <output data-cup-output="scrubEnd">1.00</output></span><input data-cup="scrubEnd" type="range" min="0" max="1" step="0.01" value="1"></label>
         </div>
+        <div id="debug-tab-plate" class="debug-dock__pane" role="tabpanel" aria-labelledby="debug-tab-plate-btn" hidden>
+          <fieldset class="debug-dock__group">
+            <legend>Подложка ролика</legend>
+            <div class="debug-dock__modes">
+              <label class="debug-dock__mode"><input data-plate="mode" type="radio" name="debug-plate-mode" value="match" checked>Точный цвет, без наложения</label>
+              <label class="debug-dock__mode"><input data-plate="mode" type="radio" name="debug-plate-mode" value="blend">Наложение на группе</label>
+              <label class="debug-dock__mode"><input data-plate="mode" type="radio" name="debug-plate-mode" value="legacy">Наложение на видео (как было)</label>
+            </div>
+          </fieldset>
+          <fieldset class="debug-dock__group">
+            <legend>Фон секции</legend>
+            <label class="debug-dock__row"><input data-plate="bgDark" type="color" value="#1f1f1f">Тёмная тема</label>
+            <label class="debug-dock__row"><input data-plate="bgLight" type="color" value="#c0c1be">Светлая тема</label>
+          </fieldset>
+        </div>
       </div>
     </div>`;
 }
@@ -186,6 +253,7 @@ export function initDebug(): void {
   const panes=new Map<DebugTabId, HTMLElement>([
     ['model', panel.querySelector('#debug-tab-model')!],
     ['cup', panel.querySelector('#debug-tab-cup')!],
+    ['plate', panel.querySelector('#debug-tab-plate')!],
   ]);
   const setTab=(id: DebugTabId)=>{
     for(const tab of tabs){
@@ -199,7 +267,7 @@ export function initDebug(): void {
   const readStoredTab=(): DebugTabId=>{
     try {
       const stored=localStorage.getItem(DEBUG_TAB_STORAGE_KEY);
-      if(stored==='cup'||stored==='model') return stored;
+      if(isTabId(stored??undefined)) return stored as DebugTabId;
     } catch { /* Storage may be disabled. */ }
     return 'model';
   };
@@ -207,7 +275,7 @@ export function initDebug(): void {
   for(const tab of tabs){
     tab.addEventListener('click',()=>{
       const id=tab.dataset.tab;
-      if(id==='model'||id==='cup') setTab(id);
+      if(isTabId(id)) setTab(id);
     });
     tab.addEventListener('keydown',e=>{
       if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight') return;
@@ -215,11 +283,12 @@ export function initDebug(): void {
       const delta=e.key==='ArrowRight'?1:-1;
       const next=tabs[(tabs.indexOf(tab)+delta+tabs.length)%tabs.length];
       const id=next.dataset.tab;
-      if(id==='model'||id==='cup'){ setTab(id); next.focus(); }
+      if(isTabId(id)){ setTab(id); next.focus(); }
     });
   }
   const inputs=debugPanelInputs(panel);
   const cupInputs=cupPanelInputs(panel);
+  const plateInputs=platePanelInputs(panel);
   const setOpen=(open:boolean)=>{button.setAttribute('aria-expanded',String(open));panel.hidden=!open;dock.classList.toggle('is-open',open);};
   button.addEventListener('click',()=>setOpen(button.getAttribute('aria-expanded')!=='true'));
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){setOpen(false);button.focus();}});
@@ -228,8 +297,11 @@ export function initDebug(): void {
   let storedCup: Partial<DebugCupSettings> | null = null;
   try { stored = JSON.parse(localStorage.getItem(DEBUG_STORAGE_KEY) ?? 'null') as Partial<DebugModelSettings> | null; } catch { stored = null; }
   try { storedCup = JSON.parse(localStorage.getItem(DEBUG_CUP_STORAGE_KEY) ?? 'null') as Partial<DebugCupSettings> | null; } catch { storedCup = null; }
+  let storedPlate: Partial<DebugPlateSettings> | null = null;
+  try { storedPlate = JSON.parse(localStorage.getItem(DEBUG_PLATE_STORAGE_KEY) ?? 'null') as Partial<DebugPlateSettings> | null; } catch { storedPlate = null; }
   writeDebugInputs(inputs, hydrateDebugState(stored));
   writeCupInputs(cupInputs, hydrateCupState(storedCup));
+  writePlateInputs(plateInputs, hydratePlateState(storedPlate));
   const syncOutputs=(rangeInputs: HTMLInputElement[], attr: 'debug' | 'cup')=>{
     for(const input of rangeInputs){
       if(input.type!=='range')continue;
@@ -256,7 +328,19 @@ export function initDebug(): void {
     }
     emit();
   }));
+  const emitPlate=()=>{
+    const state=readPlateInputs(plateInputs);
+    applyPlateState(state);
+    try { localStorage.setItem(DEBUG_PLATE_STORAGE_KEY, JSON.stringify(state)); } catch { /* Storage may be disabled. */ }
+  };
+  plateInputs.forEach(input=>input.addEventListener(input.type==='radio'?'change':'input',()=>{
+    if(input.dataset.plate==='mode'&&input.checked&&(input.value==='match'||input.value==='blend'||input.value==='legacy')){
+      writePlateInputs(plateInputs,{mode:input.value,...DEBUG_PLATE_PRESETS[input.value]});
+    }
+    emitPlate();
+  }));
   cupInputs.forEach(input=>input.addEventListener('input',emitCup));
   emit();
   emitCup();
+  emitPlate();
 }
