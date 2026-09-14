@@ -6,7 +6,7 @@ import { CHSGSMaterialAppearanceController } from './CHSGSMaterialAppearanceCont
 import { CHSGSModelThemeController, createModelLocalGateLights, type CHSGSModelTheme } from './CHSGSModelThemeController';
 import { CHSGSPassiveHoverController } from './CHSGSPassiveHoverController';
 import { CHSGSDragInertiaController } from './CHSGSDragInertiaController';
-import { getDebugModelSettings, type DebugModelSettings } from './debugDock';
+import { getDebugModelSettings, getDebugThemeSettings, type DebugModelSettings, type DebugThemeSettings } from './debugDock';
 import { mountLanding } from './landing/index';
 import { LandingMotion } from './LandingMotion';
 import { SmoothPageScroll } from './SmoothPageScroll';
@@ -20,7 +20,6 @@ import { validateAndGenerateTangents, validateMaterials } from './viewer/materia
 import { configureModelShadows } from './viewer/shadows';
 import { applyDebugModel } from './viewer/debugModel';
 import { bindViewerPointer, updateHoverPointerFromClient, type PointerState } from './viewer/pointer';
-import { createQaPanel, type QaPanelHandles } from './viewer/qaPanel';
 import './landing.css';
 
 mountLanding();
@@ -86,6 +85,11 @@ document.addEventListener('chsgs-debug-model', (event: Event) => {
   debugModel = { ...debugModel, ...detail };
   applyCurrentDebugModel();
 });
+document.addEventListener('chsgs-debug-theme', (event: Event) => {
+  const detail = (event as CustomEvent<Partial<DebugThemeSettings>>).detail ?? {};
+  if (detail.windowEmissiveColor) modelThemeController?.setWindowEmissiveColor(detail.windowEmissiveColor);
+  if (typeof detail.windowEmissiveIntensity === 'number') modelThemeController?.setWindowEmissiveIntensity(detail.windowEmissiveIntensity);
+});
 applyCurrentDebugModel();
 const syncMotionPreference = () => {
   hoverController.setReducedMotion(reducedMotionQuery.matches || !hoverCapabilityQuery.matches);
@@ -94,7 +98,6 @@ const syncMotionPreference = () => {
 reducedMotionQuery.addEventListener('change', syncMotionPreference);
 hoverCapabilityQuery.addEventListener('change', syncMotionPreference);
 syncMotionPreference();
-let qaPanel: QaPanelHandles | null = null;
 
 function resize(): void {
   const width = Math.max(1, host.clientWidth);
@@ -148,6 +151,9 @@ async function start(): Promise<void> {
     hoverRoot.add(localLights.root);
     const initialTheme: CHSGSModelTheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
     modelThemeController = new CHSGSModelThemeController(hemisphereLight, keyLight, facadeMaterials, localLights.lights, initialTheme);
+    const debugTheme = getDebugThemeSettings();
+    modelThemeController.setWindowEmissiveColor(debugTheme.windowEmissiveColor);
+    modelThemeController.setWindowEmissiveIntensity(debugTheme.windowEmissiveIntensity);
     configureModelShadows(entryRoot, keyLight, qa);
     framing.neutralBounds = new THREE.Box3().setFromObject(entryRoot);
     framing.frame(entryRoot);
@@ -174,10 +180,6 @@ async function start(): Promise<void> {
     await renderer.compileAsync(scene, camera);
     renderer.render(scene, camera);
     await landingMotion.begin();
-    qaPanel = createQaPanel({
-      debug, qa, camera, framing, hover: hoverController, drag: dragController,
-      hemisphereLight, keyLight, controls: framing.controls, modelTheme: modelThemeController,
-    });
     console.info('CHSGS LAND.01 PC03 QA', qa);
   } catch (error) {
     qa.status = 'fail';
@@ -186,10 +188,6 @@ async function start(): Promise<void> {
     status.innerHTML = `<div><p>Не удалось загрузить интерактивный завод.</p><p><a href="${import.meta.env.BASE_URL}">Повторить загрузку</a> · <a href="https://xn--d1an.xn--p1ai/info_ld_plants/chsgs/">Информация о ЧСГС</a></p></div>`;
     document.body.classList.remove('is-loading');
     status.classList.add('error');
-    qaPanel = createQaPanel({
-      debug, qa, camera, framing, hover: hoverController, drag: dragController,
-      hemisphereLight, keyLight, controls: framing.controls,
-    });
     console.error('CHSGS WEB.02D failed:', error);
   }
 }
@@ -216,8 +214,6 @@ renderer.setAnimationLoop(() => {
   qa.hierarchy.neutralHoverRotation = Math.abs(qa.hover.currentPassiveYawDeg) < 1e-6
     && Math.abs(qa.hover.currentPassivePitchDeg) < 1e-6
     && qa.hover.currentRollDeg === 0;
-  qaPanel?.refreshHover();
-  qaPanel?.refreshDrag();
   framing.controls?.update();
   if (landingMotion.diagnostics.modelVisible || qa.status === 'loading') renderer.render(scene, camera);
   qa.performance.programs = renderer.info.programs?.length ?? 0;

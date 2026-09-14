@@ -20,8 +20,13 @@ export type DebugCupSettings = {
   scrubStart: number;
   scrubEnd: number;
 };
+export type DebugThemeSettings = {
+  windowEmissiveColor: string;
+  windowEmissiveIntensity: number;
+};
 const DEBUG_STORAGE_KEY = 'chsgs-debug-model';
 const DEBUG_CUP_STORAGE_KEY = 'chsgs-debug-cup-v2';
+const DEBUG_THEME_STORAGE_KEY = 'chsgs-debug-theme';
 const DEBUG_MODEL_PRESETS: Record<DebugViewMode, Omit<DebugModelSettings, 'viewMode'>> = {
   clay: { original: false, ao: true, normals: true, reveal: true, accent: false, keyIntensity: 2.8, accentIntensity: 140 },
   lit: { original: true, ao: false, normals: true, reveal: false, accent: true, keyIntensity: 4.4, accentIntensity: 380 },
@@ -37,9 +42,14 @@ export const DEBUG_CUP_DEFAULTS: DebugCupSettings = {
   scrubStart: 0,
   scrubEnd: 1,
 };
+export const DEBUG_THEME_DEFAULTS: DebugThemeSettings = {
+  windowEmissiveColor: '#ffd39a',
+  windowEmissiveIntensity: 2,
+};
 const CUP_KEYS = ['yStart', 'yEnd', 'copyYStart', 'copyYEnd', 'x', 'scale', 'response', 'scrubStart', 'scrubEnd'] as const;
 const debugPanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll<HTMLInputElement>('input[data-debug]'));
 const cupPanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll<HTMLInputElement>('input[data-cup]'));
+const themePanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll<HTMLInputElement>('input[data-theme]'));
 const readDebugInputs = (inputs: HTMLInputElement[]): DebugModelSettings => {
   const state: DebugModelSettings = { viewMode: 'clay', ...DEBUG_MODEL_PRESETS.clay };
   for (const input of inputs) {
@@ -113,6 +123,31 @@ const hydrateCupState = (stored: Partial<DebugCupSettings> | null): DebugCupSett
   }
   return state;
 };
+const readThemeInputs = (inputs: HTMLInputElement[]): DebugThemeSettings => {
+  const state = { ...DEBUG_THEME_DEFAULTS };
+  for (const input of inputs) {
+    if (input.dataset.theme === 'windowEmissiveColor' && /^#[0-9a-f]{6}$/i.test(input.value)) state.windowEmissiveColor = input.value;
+    if (input.dataset.theme === 'windowEmissiveIntensity') {
+      const value = Number(input.value);
+      if (Number.isFinite(value)) state.windowEmissiveIntensity = value;
+    }
+  }
+  return state;
+};
+const writeThemeInputs = (inputs: HTMLInputElement[], state: DebugThemeSettings): void => {
+  for (const input of inputs) {
+    if (input.dataset.theme === 'windowEmissiveColor') input.value = state.windowEmissiveColor;
+    if (input.dataset.theme === 'windowEmissiveIntensity') input.value = String(state.windowEmissiveIntensity);
+  }
+};
+const hydrateThemeState = (stored: Partial<DebugThemeSettings> | null): DebugThemeSettings => ({
+  windowEmissiveColor: typeof stored?.windowEmissiveColor === 'string' && /^#[0-9a-f]{6}$/i.test(stored.windowEmissiveColor)
+    ? stored.windowEmissiveColor
+    : DEBUG_THEME_DEFAULTS.windowEmissiveColor,
+  windowEmissiveIntensity: typeof stored?.windowEmissiveIntensity === 'number' && Number.isFinite(stored.windowEmissiveIntensity)
+    ? Math.min(4, Math.max(0, stored.windowEmissiveIntensity))
+    : DEBUG_THEME_DEFAULTS.windowEmissiveIntensity,
+});
 const formatRangeOutput = (input: HTMLInputElement): string => {
   const value = Number(input.value);
   const fraction = input.step.includes('.') ? input.step.replace(/^[0-9]*\./, '').length : 0;
@@ -128,9 +163,14 @@ export function getDebugCupSettings(): DebugCupSettings {
   if (!panel) return { ...DEBUG_CUP_DEFAULTS };
   return readCupInputs(cupPanelInputs(panel));
 }
+export function getDebugThemeSettings(): DebugThemeSettings {
+  const panel = document.querySelector<HTMLElement>('#debug-panel');
+  if (!panel) return { ...DEBUG_THEME_DEFAULTS };
+  return readThemeInputs(themePanelInputs(panel));
+}
 
 const DEBUG_TAB_STORAGE_KEY = 'chsgs-debug-tab';
-type DebugTabId = 'model' | 'cup';
+type DebugTabId = 'model' | 'cup' | 'day_and_night';
 
 export function debugDockMarkup(): string {
   return `
@@ -140,6 +180,7 @@ export function debugDockMarkup(): string {
         <div class="debug-dock__tabs" role="tablist" aria-label="Отладка">
           <button class="debug-dock__tab" type="button" role="tab" id="debug-tab-model-btn" data-tab="model" aria-controls="debug-tab-model" aria-selected="true">Модель</button>
           <button class="debug-dock__tab" type="button" role="tab" id="debug-tab-cup-btn" data-tab="cup" aria-controls="debug-tab-cup" aria-selected="false" tabindex="-1">Кубок</button>
+          <button class="debug-dock__tab" type="button" role="tab" id="debug-tab-day-and-night-btn" data-tab="day_and_night" aria-controls="debug-tab-day-and-night" aria-selected="false" tabindex="-1">day_and_night</button>
         </div>
         <div id="debug-tab-model" class="debug-dock__pane" role="tabpanel" aria-labelledby="debug-tab-model-btn">
           <fieldset class="debug-dock__group">
@@ -174,6 +215,13 @@ export function debugDockMarkup(): string {
           <label class="debug-dock__slider"><span>Старт видео <output data-cup-output="scrubStart">0.00</output></span><input data-cup="scrubStart" type="range" min="0" max="1" step="0.01" value="0"></label>
           <label class="debug-dock__slider"><span>Конец видео <output data-cup-output="scrubEnd">1.00</output></span><input data-cup="scrubEnd" type="range" min="0" max="1" step="0.01" value="1"></label>
         </div>
+        <div id="debug-tab-day-and-night" class="debug-dock__pane" role="tabpanel" aria-labelledby="debug-tab-day-and-night-btn" hidden>
+          <fieldset class="debug-dock__group">
+            <legend>Окна ночью</legend>
+            <label class="debug-dock__row">Emissive color <input data-theme="windowEmissiveColor" type="color" value="#ffd39a"></label>
+            <label class="debug-dock__slider"><span>Emissive intensity <output data-theme-output="windowEmissiveIntensity">2.00</output></span><input data-theme="windowEmissiveIntensity" type="range" min="0" max="4" step="0.05" value="2"></label>
+          </fieldset>
+        </div>
       </div>
     </div>`;
 }
@@ -186,6 +234,7 @@ export function initDebug(): void {
   const panes=new Map<DebugTabId, HTMLElement>([
     ['model', panel.querySelector('#debug-tab-model')!],
     ['cup', panel.querySelector('#debug-tab-cup')!],
+    ['day_and_night', panel.querySelector('#debug-tab-day-and-night')!],
   ]);
   const setTab=(id: DebugTabId)=>{
     for(const tab of tabs){
@@ -199,7 +248,7 @@ export function initDebug(): void {
   const readStoredTab=(): DebugTabId=>{
     try {
       const stored=localStorage.getItem(DEBUG_TAB_STORAGE_KEY);
-      if(stored==='cup'||stored==='model') return stored;
+      if(stored==='cup'||stored==='model'||stored==='day_and_night') return stored;
     } catch { /* Storage may be disabled. */ }
     return 'model';
   };
@@ -207,7 +256,7 @@ export function initDebug(): void {
   for(const tab of tabs){
     tab.addEventListener('click',()=>{
       const id=tab.dataset.tab;
-      if(id==='model'||id==='cup') setTab(id);
+      if(id==='model'||id==='cup'||id==='day_and_night') setTab(id);
     });
     tab.addEventListener('keydown',e=>{
       if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight') return;
@@ -215,25 +264,29 @@ export function initDebug(): void {
       const delta=e.key==='ArrowRight'?1:-1;
       const next=tabs[(tabs.indexOf(tab)+delta+tabs.length)%tabs.length];
       const id=next.dataset.tab;
-      if(id==='model'||id==='cup'){ setTab(id); next.focus(); }
+      if(id==='model'||id==='cup'||id==='day_and_night'){ setTab(id); next.focus(); }
     });
   }
   const inputs=debugPanelInputs(panel);
   const cupInputs=cupPanelInputs(panel);
+  const themeInputs=themePanelInputs(panel);
   const setOpen=(open:boolean)=>{button.setAttribute('aria-expanded',String(open));panel.hidden=!open;dock.classList.toggle('is-open',open);};
   button.addEventListener('click',()=>setOpen(button.getAttribute('aria-expanded')!=='true'));
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){setOpen(false);button.focus();}});
   document.addEventListener('click',e=>{if(!(e.target as HTMLElement).closest('.debug-dock'))setOpen(false);});
   let stored: Partial<DebugModelSettings> | null = null;
   let storedCup: Partial<DebugCupSettings> | null = null;
+  let storedTheme: Partial<DebugThemeSettings> | null = null;
   try { stored = JSON.parse(localStorage.getItem(DEBUG_STORAGE_KEY) ?? 'null') as Partial<DebugModelSettings> | null; } catch { stored = null; }
   try { storedCup = JSON.parse(localStorage.getItem(DEBUG_CUP_STORAGE_KEY) ?? 'null') as Partial<DebugCupSettings> | null; } catch { storedCup = null; }
+  try { storedTheme = JSON.parse(localStorage.getItem(DEBUG_THEME_STORAGE_KEY) ?? 'null') as Partial<DebugThemeSettings> | null; } catch { storedTheme = null; }
   writeDebugInputs(inputs, hydrateDebugState(stored));
   writeCupInputs(cupInputs, hydrateCupState(storedCup));
-  const syncOutputs=(rangeInputs: HTMLInputElement[], attr: 'debug' | 'cup')=>{
+  writeThemeInputs(themeInputs, hydrateThemeState(storedTheme));
+  const syncOutputs=(rangeInputs: HTMLInputElement[], attr: 'debug' | 'cup' | 'theme')=>{
     for(const input of rangeInputs){
       if(input.type!=='range')continue;
-      const key=attr==='debug'?input.dataset.debug:input.dataset.cup;
+      const key=attr==='debug' ? input.dataset.debug : attr==='cup' ? input.dataset.cup : input.dataset.theme;
       const output=panel.querySelector(`[data-${attr}-output="${key}"]`);
       if(output)output.textContent=formatRangeOutput(input);
     }
@@ -250,6 +303,12 @@ export function initDebug(): void {
     try { localStorage.setItem(DEBUG_CUP_STORAGE_KEY, JSON.stringify(state)); } catch { /* Storage may be disabled. */ }
     document.dispatchEvent(new CustomEvent('chsgs-debug-cup',{detail:state}));
   };
+  const emitTheme=()=>{
+    const state=readThemeInputs(themeInputs);
+    syncOutputs(themeInputs,'theme');
+    try { localStorage.setItem(DEBUG_THEME_STORAGE_KEY, JSON.stringify(state)); } catch { /* Storage may be disabled. */ }
+    document.dispatchEvent(new CustomEvent('chsgs-debug-theme',{detail:state}));
+  };
   inputs.forEach(input=>input.addEventListener(input.type==='range'?'input':'change',()=>{
     if(input.dataset.debug==='viewMode'&&input.checked&&(input.value==='clay'||input.value==='lit')){
       writeDebugInputs(inputs,{viewMode:input.value,...DEBUG_MODEL_PRESETS[input.value]});
@@ -257,6 +316,8 @@ export function initDebug(): void {
     emit();
   }));
   cupInputs.forEach(input=>input.addEventListener('input',emitCup));
+  themeInputs.forEach(input=>input.addEventListener(input.type==='range'?'input':'change',emitTheme));
   emit();
   emitCup();
+  emitTheme();
 }

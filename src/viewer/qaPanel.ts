@@ -6,7 +6,6 @@ import type { CHSGSPassiveHoverController } from '../CHSGSPassiveHoverController
 import { SHADOWS } from './config';
 import { ModelFramer, normalizeAzimuthDeg } from './framing';
 import { updateAppearanceQa } from './appearanceQa';
-import type { CHSGSModelThemeController } from '../CHSGSModelThemeController';
 import type { QaResult } from './qa';
 
 export interface QaPanelContext {
@@ -20,7 +19,6 @@ export interface QaPanelContext {
   keyLight: THREE.DirectionalLight;
   controls: OrbitControls | null;
   appearance?: CHSGSMaterialAppearanceController;
-  modelTheme?: CHSGSModelThemeController | null;
 }
 
 export interface QaPanelHandles {
@@ -30,7 +28,7 @@ export interface QaPanelHandles {
 
 export function createQaPanel(ctx: QaPanelContext): QaPanelHandles | null {
   if (!ctx.debug) return null;
-  const { qa, camera, framing, hover, drag, hemisphereLight, keyLight, controls, appearance: controller, modelTheme } = ctx;
+  const { qa, camera, framing, hover, drag, hemisphereLight, keyLight, controls, appearance: controller } = ctx;
   const panel = document.createElement('aside');
   panel.className = 'qa-panel';
   const output = document.createElement('pre');
@@ -432,26 +430,6 @@ export function createQaPanel(ctx: QaPanelContext): QaPanelHandles | null {
   lightingTuning.append(hemisphereLabel, directionalLabel);
   updateLightingDisplay();
 
-  const emissiveHeading = document.createElement('h2');
-  emissiveHeading.textContent = 'WINDOW EMISSIVE';
-  const emissiveTuning = document.createElement('div');
-  emissiveTuning.className = 'tuning';
-  const emissiveColor = document.createElement('input');
-  emissiveColor.type = 'color';
-  emissiveColor.value = modelTheme?.diagnostics.windowEmissiveColor ?? '#ffd39a';
-  const emissiveColorLabel = document.createElement('label');
-  emissiveColorLabel.append('Emissive Color ', emissiveColor);
-  emissiveColor.addEventListener('input', () => { modelTheme?.setWindowEmissiveColor(emissiveColor.value); refresh(); });
-  const emissiveIntensity = document.createElement('input');
-  emissiveIntensity.type = 'range'; emissiveIntensity.min = '0'; emissiveIntensity.max = '4'; emissiveIntensity.step = '0.05';
-  emissiveIntensity.value = String(modelTheme?.diagnostics.windowEmissiveIntensity ?? 2);
-  const emissiveIntensityLabel = document.createElement('label');
-  const emissiveIntensityValue = document.createElement('output');
-  emissiveIntensityValue.value = Number(emissiveIntensity.value).toFixed(2);
-  emissiveIntensityLabel.append('Night Intensity ', emissiveIntensityValue, emissiveIntensity);
-  emissiveIntensity.addEventListener('input', () => { const value = Number(emissiveIntensity.value); modelTheme?.setWindowEmissiveIntensity(value); emissiveIntensityValue.value = value.toFixed(2); refresh(); });
-  emissiveTuning.append(emissiveColorLabel, emissiveIntensityLabel);
-
   const diagnostics = document.createElement('details');
   const diagnosticsSummary = document.createElement('summary');
   diagnosticsSummary.textContent = 'QA diagnostics';
@@ -463,7 +441,6 @@ export function createQaPanel(ctx: QaPanelContext): QaPanelHandles | null {
     hoverHeading, hoverControls, hoverTuning, hoverDiagnostics,
     dragHeading, dragControls, dragTuning, dragDiagnostics,
     lightingHeading, lightingTuning, lightingSummary,
-    emissiveHeading, emissiveTuning,
     diagnostics,
   );
   document.body.append(panel);
