@@ -394,7 +394,7 @@ export function createQaPanel(ctx: QaPanelContext): QaPanelHandles | null {
   const updateLightingDisplay = () => {
     qa.lighting.hemisphereIntensity = hemisphereLight.intensity;
     qa.lighting.directionalIntensity = keyLight.intensity;
-    lightingSummary.textContent = `Hemisphere ${hemisphereLight.intensity.toFixed(2)} · Directional ${keyLight.intensity.toFixed(2)} · Shadows ON · ${SHADOWS.mapSize}px PCFSoft`;
+    lightingSummary.textContent = `Hemisphere ${hemisphereLight.intensity.toFixed(2)} · Directional ${keyLight.intensity.toFixed(2)} · Shadows ON · ${SHADOWS.mapSize}px PCF`;
     refresh();
   };
   const hemisphereLabel = document.createElement('label');

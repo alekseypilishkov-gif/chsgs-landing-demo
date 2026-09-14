@@ -124,7 +124,7 @@ export function createInitialQa(options: {
     lighting: { hemisphereIntensity: options.hemisphereIntensity, directionalIntensity: options.directionalIntensity },
     shadows: {
       enabled: options.shadowsEnabled,
-      type: 'PCFSoftShadowMap',
+      type: 'PCFShadowMap',
       mapSize: SHADOWS.mapSize,
       castMeshes: 0,
       receiveMeshes: 0,

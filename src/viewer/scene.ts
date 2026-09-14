@@ -10,7 +10,7 @@ export function createViewer(host: HTMLElement) {
   renderer.toneMapping = THREE.AgXToneMapping;
   renderer.toneMappingExposure = 1;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   host.prepend(renderer.domElement);
 
   const hemisphereLight = new THREE.HemisphereLight(LIGHTING.hemisphereSky, LIGHTING.hemisphereGround, LIGHTING.hemisphereIntensity);

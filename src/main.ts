@@ -139,7 +139,6 @@ async function start(): Promise<void> {
     appearanceController = appearance;
     appearance.setFramebufferScale(renderer.getPixelRatio());
     window.__CHSGS_APPEARANCE__ = appearance;
-    applyCurrentDebugModel();
     validateMaterials(gltf.scene, materialMap, qa);
     if (qa.meshes !== EXPECTED.meshes) qa.errors.push(`Mesh count ${qa.meshes}, expected ${EXPECTED.meshes}.`);
     if (qa.triangles !== EXPECTED.triangles) qa.errors.push(`Triangle count ${qa.triangles}, expected ${EXPECTED.triangles}.`);
