@@ -21,18 +21,18 @@ export type DebugCupSettings = {
   scrubEnd: number;
 };
 const DEBUG_STORAGE_KEY = 'chsgs-debug-model';
-const DEBUG_CUP_STORAGE_KEY = 'chsgs-debug-cup';
+const DEBUG_CUP_STORAGE_KEY = 'chsgs-debug-cup-v2';
 const DEBUG_MODEL_PRESETS: Record<DebugViewMode, Omit<DebugModelSettings, 'viewMode'>> = {
   clay: { original: false, ao: true, normals: true, reveal: true, accent: false, keyIntensity: 2.8, accentIntensity: 140 },
   lit: { original: true, ao: false, normals: true, reveal: false, accent: true, keyIntensity: 4.4, accentIntensity: 380 },
 };
 export const DEBUG_CUP_DEFAULTS: DebugCupSettings = {
-  yStart: 12,
-  yEnd: 32,
-  copyYStart: 0,
-  copyYEnd: 8,
-  x: 2,
-  scale: 1.06,
+  yStart: -23,
+  yEnd: 17,
+  copyYStart: 3,
+  copyYEnd: 11,
+  x: -0.5,
+  scale: 1,
   response: 10,
   scrubStart: 0,
   scrubEnd: 1,
@@ -164,12 +164,12 @@ export function debugDockMarkup(): string {
           </fieldset>
         </div>
         <div id="debug-tab-cup" class="debug-dock__pane" role="tabpanel" aria-labelledby="debug-tab-cup-btn" hidden>
-          <label class="debug-dock__slider"><span>Кубок вход Y <output data-cup-output="yStart">12</output></span><input data-cup="yStart" type="range" min="-40" max="80" step="1" value="12"></label>
-          <label class="debug-dock__slider"><span>Кубок выход Y <output data-cup-output="yEnd">32</output></span><input data-cup="yEnd" type="range" min="-40" max="80" step="1" value="32"></label>
-          <label class="debug-dock__slider"><span>Текст вход Y <output data-cup-output="copyYStart">0</output></span><input data-cup="copyYStart" type="range" min="-40" max="80" step="1" value="0"></label>
-          <label class="debug-dock__slider"><span>Текст выход Y <output data-cup-output="copyYEnd">8</output></span><input data-cup="copyYEnd" type="range" min="-40" max="80" step="1" value="8"></label>
-          <label class="debug-dock__slider"><span>Сдвиг X <output data-cup-output="x">2</output></span><input data-cup="x" type="range" min="-20" max="20" step="0.5" value="2"></label>
-          <label class="debug-dock__slider"><span>Масштаб <output data-cup-output="scale">1.06</output></span><input data-cup="scale" type="range" min="0.6" max="1.8" step="0.01" value="1.06"></label>
+          <label class="debug-dock__slider"><span>Кубок вход Y <output data-cup-output="yStart">-23</output></span><input data-cup="yStart" type="range" min="-40" max="80" step="1" value="-23"></label>
+          <label class="debug-dock__slider"><span>Кубок выход Y <output data-cup-output="yEnd">17</output></span><input data-cup="yEnd" type="range" min="-40" max="80" step="1" value="17"></label>
+          <label class="debug-dock__slider"><span>Текст вход Y <output data-cup-output="copyYStart">3</output></span><input data-cup="copyYStart" type="range" min="-40" max="80" step="1" value="3"></label>
+          <label class="debug-dock__slider"><span>Текст выход Y <output data-cup-output="copyYEnd">11</output></span><input data-cup="copyYEnd" type="range" min="-40" max="80" step="1" value="11"></label>
+          <label class="debug-dock__slider"><span>Сдвиг X <output data-cup-output="x">-0.5</output></span><input data-cup="x" type="range" min="-20" max="20" step="0.5" value="-0.5"></label>
+          <label class="debug-dock__slider"><span>Масштаб <output data-cup-output="scale">1.00</output></span><input data-cup="scale" type="range" min="0.6" max="1.8" step="0.01" value="1"></label>
           <label class="debug-dock__slider"><span>Инерция <output data-cup-output="response">10</output></span><input data-cup="response" type="range" min="1" max="30" step="0.5" value="10"></label>
           <label class="debug-dock__slider"><span>Старт видео <output data-cup-output="scrubStart">0.00</output></span><input data-cup="scrubStart" type="range" min="0" max="1" step="0.01" value="0"></label>
           <label class="debug-dock__slider"><span>Конец видео <output data-cup-output="scrubEnd">1.00</output></span><input data-cup="scrubEnd" type="range" min="0" max="1" step="0.01" value="1"></label>

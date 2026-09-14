@@ -104,6 +104,7 @@
 	gap: 24px;
 	padding: 16px 20px;
 	pointer-events: none;
+	border: var(--ld-header-surface-border);
 	border-radius: var(--ld-header-radius);
 	background: var(--ld-header-glass);
 	backdrop-filter: blur(16px) saturate(100%);

@@ -220,7 +220,7 @@
 }
 .achievements-section {
 	z-index: 4;
-	min-height: 160svh;
+	min-height: 220svh;
 	overflow: visible;
 	background: #232323;
 	display: flex;
@@ -278,20 +278,22 @@
 	position: absolute;
 	inset: 0;
 	z-index: 1;
+	overflow: visible;
 	pointer-events: none;
-	transform-origin: 100% 42%;
+	transform-origin: 100% 28%;
 	will-change: transform;
-	clip-path: inset(-30% -30vw -20% 56%);
 }
 .award-cup {
 	position: absolute;
-	right: -10vw;
-	top: -6%;
-	width: min(44vw, 680px);
-	height: 124%;
+	right: 3vw;
+	top: 19vh;
+	width: 30vw;
+	height: auto;
+	/* Window matches the cup silhouette (549x1951 of the 1024x2048 frame), so cover trims only empty padding. */
+	aspect-ratio: 1 / 3.5;
 	display: block;
 	object-fit: cover;
-	object-position: 62% 40%;
+	object-position: 48% center;
 	user-select: none;
 }
 :root[data-theme=dark] .award-cup {
