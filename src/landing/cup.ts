@@ -46,7 +46,7 @@ export class AwardCup {
 
   private get duration(): number {
     const ready = this.videos.find((video) => Number.isFinite(video.duration) && video.duration > 0);
-    return ready?.duration ?? 4;
+    return ready?.duration ?? 8;
   }
 
   update(progress: number, dt: number, viewportHeight: number): void {

@@ -269,6 +269,7 @@
 		top: -4vh;
 		height: 170vh;
 		width: auto;
+		aspect-ratio: 650 / 2048;
 	}
 	.client-grid,
 	.client-placeholder-grid {
@@ -533,6 +534,7 @@
 		bottom: auto;
 		height: 120vh;
 		width: auto;
+		aspect-ratio: 650 / 2048;
 	}
 	.client-tabs {
 		gap: 7px;

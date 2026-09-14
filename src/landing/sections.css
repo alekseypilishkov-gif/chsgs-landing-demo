@@ -289,37 +289,12 @@
 	top: 19vh;
 	width: 30vw;
 	height: auto;
-	/* Window matches the cup silhouette (549x1951 of the 1024x2048 frame), so cover trims only empty padding. */
-	aspect-ratio: 1 / 3.5;
+	/* Native frame of cup-alpha.webm is 650×2048, already cropped to the cup. */
+	aspect-ratio: 650 / 2048;
 	display: block;
-	object-fit: cover;
-	object-position: 48% center;
+	object-fit: contain;
+	object-position: center;
 	user-select: none;
-}
-/* Plate variants, switchable from the debug dock. Default is no blending: the section
-   colour is matched to the decoded backdrop of the clip, which keeps the dark pedestal.
-   The parallax transform on .award-art isolates it, so a working blend has to sit on the
-   group; on the video itself it would composite against nothing (the "legacy" variant). */
-:root[data-cup-plate=blend][data-theme=dark] .award-art {
-	mix-blend-mode: lighten;
-}
-:root[data-cup-plate=blend][data-theme=light] .award-art {
-	mix-blend-mode: darken;
-}
-:root[data-cup-plate=legacy][data-theme=dark] .award-cup {
-	mix-blend-mode: lighten;
-}
-:root[data-cup-plate=legacy][data-theme=light] .award-cup {
-	mix-blend-mode: darken;
-}
-.award-cup--light {
-	display: none;
-}
-:root[data-theme=light] .award-cup--dark {
-	display: none;
-}
-:root[data-theme=light] .award-cup--light {
-	display: block;
 }
 .clients-section {
 	z-index: 4;
