@@ -30,7 +30,7 @@ export type DebugThemeSettings = {
   windowEmissiveColor: string;
   windowEmissiveIntensity: number;
 };
-const DEBUG_STORAGE_KEY = 'chsgs-debug-model-v2';
+const DEBUG_STORAGE_KEY = 'chsgs-debug-model-v3';
 const DEBUG_CUP_STORAGE_KEY = 'chsgs-debug-cup-v2';
 const DEBUG_PLATE_STORAGE_KEY = 'chsgs-debug-plate';
 const DEBUG_THEME_STORAGE_KEY = 'chsgs-debug-theme';
@@ -66,7 +66,7 @@ const cupPanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll
 const platePanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll<HTMLInputElement>('input[data-plate]'));
 const themePanelInputs = (panel: HTMLElement) => Array.from(panel.querySelectorAll<HTMLInputElement>('input[data-theme]'));
 const readDebugInputs = (inputs: HTMLInputElement[]): DebugModelSettings => {
-  const state: DebugModelSettings = { viewMode: 'lit', ...DEBUG_MODEL_PRESETS.lit };
+  const state: DebugModelSettings = { viewMode: 'clay', ...DEBUG_MODEL_PRESETS.clay };
   for (const input of inputs) {
     const key = input.dataset.debug;
     if (!key) continue;
@@ -98,7 +98,7 @@ const writeDebugInputs = (inputs: HTMLInputElement[], state: DebugModelSettings)
   }
 };
 const hydrateDebugState = (stored: Partial<DebugModelSettings> | null): DebugModelSettings => {
-  const viewMode: DebugViewMode = stored?.viewMode === 'clay' ? 'clay' : 'lit';
+  const viewMode: DebugViewMode = stored?.viewMode === 'lit' ? 'lit' : 'clay';
   const base = { viewMode, ...DEBUG_MODEL_PRESETS[viewMode] };
   if (!stored) return base;
   return {
@@ -205,7 +205,7 @@ const formatRangeOutput = (input: HTMLInputElement): string => {
 };
 export function getDebugModelSettings(): DebugModelSettings {
   const panel = document.querySelector<HTMLElement>('#debug-panel');
-  if (!panel) return { viewMode: 'lit', ...DEBUG_MODEL_PRESETS.lit };
+  if (!panel) return { viewMode: 'clay', ...DEBUG_MODEL_PRESETS.clay };
   return readDebugInputs(debugPanelInputs(panel));
 }
 export function setDebugViewMode(mode: DebugViewMode): void {
@@ -245,22 +245,22 @@ export function debugDockMarkup(): string {
           <fieldset class="debug-dock__group">
             <legend>Режим</legend>
             <div class="debug-dock__modes">
-              <label class="debug-dock__mode"><input data-debug="viewMode" type="radio" name="debug-view-mode" value="lit" checked>Текущий</label>
-              <label class="debug-dock__mode"><input data-debug="viewMode" type="radio" name="debug-view-mode" value="clay">Изначальный</label>
+              <label class="debug-dock__mode"><input data-debug="viewMode" type="radio" name="debug-view-mode" value="clay" checked>Изначальный</label>
+              <label class="debug-dock__mode"><input data-debug="viewMode" type="radio" name="debug-view-mode" value="lit">Текущий</label>
             </div>
           </fieldset>
           <fieldset class="debug-dock__group">
             <legend>Модель</legend>
-            <label class="debug-dock__row"><input data-debug="original" type="checkbox" checked>Текстуры модели</label>
-            <label class="debug-dock__row"><input data-debug="ao" type="checkbox">Окклюзия</label>
+            <label class="debug-dock__row"><input data-debug="original" type="checkbox">Текстуры модели</label>
+            <label class="debug-dock__row"><input data-debug="ao" type="checkbox" checked>Окклюзия</label>
             <label class="debug-dock__row"><input data-debug="normals" type="checkbox" checked>Карты нормалей</label>
-            <label class="debug-dock__row"><input data-debug="reveal" type="checkbox">Проявление курсором</label>
+            <label class="debug-dock__row"><input data-debug="reveal" type="checkbox" checked>Проявление курсором</label>
           </fieldset>
           <fieldset class="debug-dock__group">
             <legend>Свет</legend>
-            <label class="debug-dock__row"><input data-debug="accent" type="checkbox" checked>Источник света</label>
-            <label class="debug-dock__slider"><span>Основной свет <output data-debug-output="keyIntensity">4.4</output></span><input data-debug="keyIntensity" type="range" min="0" max="6" step="0.05" value="4.4"></label>
-            <label class="debug-dock__slider"><span>Свет курсора <output data-debug-output="accentIntensity">380</output></span><input data-debug="accentIntensity" type="range" min="0" max="400" step="5" value="380"></label>
+            <label class="debug-dock__row"><input data-debug="accent" type="checkbox">Источник света</label>
+            <label class="debug-dock__slider"><span>Основной свет <output data-debug-output="keyIntensity">2.8</output></span><input data-debug="keyIntensity" type="range" min="0" max="6" step="0.05" value="2.8"></label>
+            <label class="debug-dock__slider"><span>Свет курсора <output data-debug-output="accentIntensity">140</output></span><input data-debug="accentIntensity" type="range" min="0" max="400" step="5" value="140"></label>
           </fieldset>
         </div>
         <div id="debug-tab-cup" class="debug-dock__pane" role="tabpanel" aria-labelledby="debug-tab-cup-btn" hidden>

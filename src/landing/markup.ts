@@ -14,7 +14,7 @@ export function headerMarkup(): string {
         <button id="menu-toggle" class="ld-site-header__burger ld-site-header__icon-button" type="button" aria-label="Меню" aria-expanded="false" aria-controls="main-nav" aria-haspopup="true">${icon.burger}${icon.close}</button>
         <a class="ld-site-header__user ld-site-header__icon-button" href="${factory.profile}" aria-label="Личный кабинет">${icon.user}</a>
       </div>
-      <nav id="main-nav" class="ld-site-header__panel" hidden aria-label="Разделы страницы">${navItems()}<div class="model-view-switch" role="group" aria-label="Вид модели"><button type="button" data-model-view="lit" aria-pressed="true">Текущий</button><button type="button" data-model-view="clay" aria-pressed="false">Изначальный</button></div></nav>
+      <nav id="main-nav" class="ld-site-header__panel" hidden aria-label="Разделы страницы">${navItems()}<div class="model-view-switch" role="group" aria-label="Вид модели"><button type="button" data-model-view="clay" aria-pressed="true">Изначальный</button><button type="button" data-model-view="lit" aria-pressed="false">Текущий</button></div></nav>
     </header>
     <button id="theme-toggle" class="theme-dock" type="button" aria-label="Светлая тема" aria-pressed="false"><span aria-hidden="true">◐</span></button>
     ${debugDockMarkup()}
