@@ -63,6 +63,9 @@ export class LandingMotion {
       history.pushState(null,'',a.hash);window.scrollTo({top,behavior:this.reduced.matches?'instant':'smooth'});
     }));
   }
+  preloadCup(): void {
+    this.cup.preload();
+  }
   private measure():void{
     this.width=window.innerWidth;this.height=window.innerHeight;
     for(const selector of ['.hero-stage','#production','#quality','.quality-body','.quality-model-space','#service','#achievements']){const r=el(selector).getBoundingClientRect();this.ranges[selector]={top:r.top+window.scrollY,height:r.height};}

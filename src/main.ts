@@ -134,6 +134,7 @@ async function start(): Promise<void> {
       requiredElement('#load-bar').style.transform = `scaleX(${progress})`;
       requiredElement('#load-label').textContent = progress < 1 ? `Загружаем завод · ${Math.round(progress * 100)}%` : 'Готовим материалы и освещение';
     });
+    landingMotion.preloadCup();
     hoverRoot.add(gltf.scene);
     const { materialMap, materialInstances } = validateAndGenerateTangents(gltf.scene, qa);
     validateMaterials(gltf.scene, materialMap, qa);

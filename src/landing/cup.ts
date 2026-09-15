@@ -21,24 +21,16 @@ export class AwardCup {
         this.time = Math.min(this.time, this.duration);
       });
     }
-    const section = document.querySelector('#achievements');
-    if (section) {
-      const observer = new IntersectionObserver((entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
-        this.attachSources();
-        observer.disconnect();
-      }, { rootMargin: '200% 0px' });
-      observer.observe(section);
-    }
     document.addEventListener('chsgs-debug-cup', (event: Event) => {
       this.settings = (event as CustomEvent<DebugCupSettings>).detail ?? this.settings;
     });
   }
 
-  private attachSources(): void {
+  preload(): void {
     for (const video of this.videos) {
       const src = video.dataset.src;
       if (!src || video.getAttribute('src') === src) continue;
+      video.preload = 'auto';
       video.src = src;
       video.load();
     }

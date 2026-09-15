@@ -229,7 +229,7 @@
 	padding-bottom: clamp(120px, 28vh, 320px);
 }
 :root[data-theme=light] .achievements-section {
-	background: var(--achievements-bg-light, #c0c1be);
+	background: #f8f7f2;
 }
 .achievement-copy-track {
 	width: 58%;
